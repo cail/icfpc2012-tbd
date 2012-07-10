@@ -11,8 +11,8 @@ python 2.7? (preferably 32-bit version)
 setuptools
 easy_install numpy
 msysgit (for windows)
-eclipse
-pydev (specify preferences->pydev->python interpreter)
+eclipse (eclipse classic is fine)
+pydev
 
 --
 Eclipse projects correspond to directories in repo.
@@ -49,3 +49,16 @@ git push
 == Never Never Never revert your published history!
 Never do 'git commit --amend' if you've already push-ed the previous commit!
 Never do 'git rebase' on published commits
+
+
+
+=== Eclipse ===
+
+In eclipse specify this repo directory (icfpc2012-tbd ) as workspace directory. 
+All preferences are stored in metadata and are therefore local.
+
+preferences->pydev->python interpreter->auto config
+
+file->import->existing project into workspace (test_proj)
+
+run it (open file 'main.py' and Ctrl-F11)
