@@ -31,7 +31,7 @@ Line endings:
 git config --global user.name "Your Name"
 git config --global user.email "address you used to register on github"
 
-git clone git@github.com:cail/icfpc2011-tbd.git
+git clone git@github.com:cail/icfpc2012-tbd.git
 
 
 == Git working cycle, cail's version ==
