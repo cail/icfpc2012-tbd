@@ -1,60 +1,56 @@
-icfpc2012-tbd
-=============
+# icfpc2012-tbd #
 
-icfpc2012-tbd
+## Tools ##
 
+- python 2.7? (preferably 32-bit version)
+- setuptools
+- easy_install numpy
+- msysgit (for windows)
+- eclipse (eclipse classic is fine)
+- pydev
 
-
-=== Tools ===
-
-python 2.7? (preferably 32-bit version)
-setuptools
-easy_install numpy
-msysgit (for windows)
-eclipse (eclipse classic is fine)
-pydev
-
---
 Eclipse projects correspond to directories in repo.
 But eclipse workspace itself is not in repo (that's why .metadata have to be in gitignore)
 
-
-=== Git ===
+## Git ##
 
 Generate keys (http://help.github.com/msysgit-key-setup/)
+
 Upload public key on github account settings page
 
 Line endings:
-  for linux    git config --global core.autocrlf input
-  for windows  git config --global core.autocrlf true
 
-git config --global user.name "Your Name"
-git config --global user.email "address you used to register on github"
+- Linux:   `git config --global core.autocrlf input`
+- Windows:  `git config --global core.autocrlf true`
 
-git clone git@github.com:cail/icfpc2012-tbd.git
+Username and email:
 
+    git config --global user.name "Your Name"
+    git config --global user.email "address you used to register on github"
 
-== Git working cycle, cail's version ==
+Clone the repo:
 
-git pull
-[hack]
-git add
-gitk (to ensure you added to index all changes you indended to add)
-git commit (or git gui for better and precise commit management)
-git pull
-[resolve conflicts if any]
-git push
+    git clone git@github.com:cail/icfpc2012-tbd.git
 
+## Git working cycle, cail's version ##
 
-== Never Never Never revert your published history!
-Never do 'git commit --amend' if you've already push-ed the previous commit!
-Never do 'git rebase' on published commits
-
+    git pull
+    [hack]
+    git add
+    gitk (to ensure you added to index all changes you indended to add)
+    git commit (or git gui for better and precise commit management)
+    git pull
+    [resolve conflicts if any]
+    git push
 
 
-=== Eclipse ===
+Never Never Never revert your published history!
+Never do `git commit --amend` if you've already push-ed the previous commit!
+Never do `git rebase` on published commits
 
-In eclipse specify this repo directory (icfpc2012-tbd ) as workspace directory. 
+## Eclipse ##
+
+In eclipse specify this repo directory (icfpc2012-tbd ) as workspace directory.
 All preferences are stored in metadata and are therefore local.
 
 preferences->pydev->python interpreter->auto config
