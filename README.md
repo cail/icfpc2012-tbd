@@ -45,7 +45,9 @@ Clone the repo:
 
 
 Never Never Never revert your published history!
+
 Never do `git commit --amend` if you've already push-ed the previous commit!
+
 Never do `git rebase` on published commits
 
 ## Eclipse ##
