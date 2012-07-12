@@ -24,3 +24,7 @@ Commits affecting production code can be observed by 'gitk production'.
 ---
 
 Yeah, as for coding conventions, rely on PEP 8.
+
+---
+
+I don't know whether formal similarity between trunk&branches and production&scratches has any philosophical implications.
