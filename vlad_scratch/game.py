@@ -5,7 +5,10 @@ class Map(object):
         'width',
         'height',
         'data',
-        'robot',    # (x, y); zero based, because!
+        'robot',   # (x, y); zero based, because!
+        'aborted', # whether robot executed Abort
+        'lifted',  # whether robot has entered lambda lift 
+        'dead',    # whether robot was killed by rock
     ]
 
     @staticmethod
@@ -20,6 +23,9 @@ class Map(object):
         map.height = len(lines)
         map.width = len(lines[0].rstrip('\n'))
         map.robot = None
+        map.aborted = False
+        map.lifted = False
+        map.dead = False
             
         for i, line in enumerate(lines):
             i = map.height-1-i
@@ -48,6 +54,8 @@ class Map(object):
         x, y = self.robot
         new_cell = self.data.get((x+dx, y+dy), '#')
         if new_cell in ' .\\O':
+            if new_cell == 'O':
+                self.lifted = True
             self.data[self.robot] = ' '
             self.robot = x+dx, y+dy
             self.data[self.robot] = 'R'
@@ -68,6 +76,10 @@ class Map(object):
         data = self.data
         u = {}
         
+        def fall(x, y):
+            if self.robot == (x, y-1):
+                self.dead = True
+        
         has_lambdas = '\\' in data.values() 
         # because lambdas can not disappear during updates 
         
@@ -78,25 +90,39 @@ class Map(object):
                 if under == ' ':
                     u[x, y] = ' '
                     u[x, y-1] = '*'
+                    fall(x, y-1)
                     continue
                 if under == '*':
                     if data.get((x+1, y)) == ' ' and data.get((x+1, y-1)) == ' ':
                         u[x, y] = ' '
                         u[x+1, y-1] = '*'
+                        fall(x+1, y-1)
                         continue
                     if data.get((x-1, y)) == ' ' and data.get((x-1, y-1)) == ' ':
                         u[x, y] = ' '
                         u[x-1, y-1] = '*'
+                        fall(x-1, y-1)
                         continue
                 if under == '\\':
                     if data.get((x+1, y)) == ' ' and data.get((x+1, y-1)) == ' ':
                         u[x, y] = ' '
                         u[x+1, y-1] = '*'
+                        fall(x+1, y-1)
                         continue
             if c == 'L' and not has_lambdas:
                 u[x, y] = 'O'
                     
         data.update(**u)
+        
+    def ending(self):
+        '''return either None or additional score'''
+        if self.lifted:
+            return 50
+        if self.dead:
+            return 0
+        if self.aborted:
+            return 25
+    
                 
     
 def main():
@@ -106,6 +132,8 @@ def main():
     map.show()
     map.update()
     map.show()
+    
+    assert map.ending() is None
 
 
 if __name__ == '__main__':
