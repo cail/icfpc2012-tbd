@@ -198,7 +198,8 @@ class Map(object):
         return self.initial_lambdas-self.count_lambdas()
         
     def intermediate_score(self):
-        return 25*self.collected_lambdas()-len(self.commands)
+        '''score assuming we abort in time'''
+        return 50*self.collected_lambdas()-len(self.commands)
         
     def ending(self):
         '''return either None or additional score'''
@@ -230,13 +231,13 @@ def play(map):
             
             
 
-def validate(map_number, route):
+def validate(map_name, route):
     '''Validate with my emulator
     
     Follows webvalidator interface.
     Return tuple (score, world).
     '''
-    map = Map.load_file('../data/sample_maps/contest{}.map'.format(map_number))
+    map = Map.load_file('../data/sample_maps/{}.map'.format(map_name))
     
     e = None
     for c in route:
@@ -251,8 +252,7 @@ def validate(map_number, route):
     if e is not None:
         score = e
     else:
-        map.aborted = True
-        score = map.ending()
+        score = map.intermediate_score()
         assert score is not None
         
     return (score, map.get_map_string())
@@ -261,4 +261,4 @@ def validate(map_number, route):
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
-    my = validate(1, 'RRR')
+    my = validate('contest1', 'RRR')

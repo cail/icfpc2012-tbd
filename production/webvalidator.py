@@ -6,17 +6,16 @@ path = '/~edwin/cgi-bin/weblifter.cgi';
 headers = {"Content-type": "application/x-www-form-urlencoded",
                "Accept": "text/plain"}
 
-def validate(map_number, route, graceful=False):
+def validate(map_name, route, graceful=False):
     '''Validate route with official web validator.
     Graceful imposes a minimum time between uses.
     
     Return tuple (score, world).
     '''
-    assert map_number in xrange(1, 11), "Invalid map number"
     if graceful:
         assert_enough_time_elapsed()
     
-    params = urllib.urlencode({'mapfile': 'contest' + str(map_number), 'route': route})
+    params = urllib.urlencode({'mapfile': map_name, 'route': route})
     conn = httplib.HTTPConnection(server)
     conn.request("POST", path, params, headers)
     response = conn.getresponse()
