@@ -8,6 +8,7 @@ class Map(object):
         'robot',    # (x, y); zero based, because!
         'lambdas',
         'moves',
+        'done',
         'dead',
         'lifted',
         'aborted'
@@ -26,6 +27,7 @@ class Map(object):
         m.data = {}
         m.lambdas = 0
         m.moves = 0
+        m.done = False
         m.dead = False
         m.lifted = False
         m.aborted = False
@@ -53,7 +55,7 @@ class Map(object):
         print 'dead:', self.dead
         print 'aborted:', self.aborted
         print 'lifted:', self.lifted
-        if self.dead:
+        if self.done:
             print 'score:',self.score()
 
     def move(self, dx, dy):
@@ -132,11 +134,12 @@ class Map(object):
         '''executes one command for the robot.
         returns whether the game is finished after this move.
         '''
-        assert not self.dead
+        assert not self.done
 
         if command == 'A':
-            self.dead = True
+            self.done = True
             self.aborted = True
+            self.dead = self.update()
             return True
         elif command == 'W':
             self.moves += 1
@@ -157,10 +160,10 @@ class Map(object):
             if visited == '\\':
                 self.lambdas += 1
             elif visited == 'O':
-                self.dead = True
+                self.done = True
                 self.lifted = True
             self.moves += 1
-            self.dead = self.dead or self.update()
+            self.dead = self.update()
             return not self.dead
 
     def execute_whole(self, program):
@@ -171,8 +174,10 @@ class Map(object):
         self.execute('A')
 
     def score(self):
-        res = -self.moves
-        res += self.lambdas * 25
+        res = 25 * self.lambdas - self.moves
+        if self.dead:
+            return res
+
         if self.aborted:
             res += self.lambdas * 25
         if self.lifted:

@@ -8,7 +8,7 @@ def main(argv):
 		exit()
 
 	m = Map.load(argv[1])
-	while not m.dead:
+	while not m.done:
 		m.show()
 		c = raw_input('>')
 		print 'res:', m.execute(c)
