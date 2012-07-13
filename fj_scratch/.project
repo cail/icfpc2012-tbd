@@ -3,6 +3,7 @@
 	<name>fj_scratch</name>
 	<comment></comment>
 	<projects>
+		<project>production</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
