@@ -1,7 +1,10 @@
 import curses
 
 import game
+import time
 
+class UserAbort(Exception):
+    pass
 
 class RoguelikeInterface(object):
     def __init__(self, map_name, route=''):
@@ -49,13 +52,13 @@ class RoguelikeInterface(object):
     
     def draw_help(self):
         if self.interactive:
-            help_text = "Controls: arrow keys and A, W"
-        elif self.step_by_step:
-            help_text = "Press space for next move, i to take over control"
+            help_text = "Arrow keys, A and W to control the robot, q to quit"
         else:
-            assert(False)
+            help_text = '''Press space for next move, i to take over control,\n s to toggle step-by-step execution, q to quit'''
         
         self.stdscr.move(self.help_y, self.help_x)
+        self.stdscr.clrtoeol()
+        self.stdscr.move(self.help_y + 1, self.help_x)
         self.stdscr.clrtoeol()
         self.stdscr.addstr(self.help_y, self.help_x, help_text)
         
@@ -74,6 +77,8 @@ class RoguelikeInterface(object):
             c = self.stdscr.getch()
             if c in commands:
                 return commands[c]
+            elif c == ord('q'):
+                raise UserAbort
    
     def curses_init(self):         
         self.stdscr = curses.initscr()
@@ -103,14 +108,40 @@ class RoguelikeInterface(object):
     def run_noninteractive(self):
         self.interactive = False
         self.update()
+        
         for move in self.route:
-            while True:
+            if self.step_by_step:
+                while True:
+                    c = self.stdscr.getch()
+                    if c == ord('i'):
+                        self.run_interactive()
+                        return
+                    elif c == ord('s'):
+                        self.step_by_step = False
+                        break
+                    elif c == ord(' '):
+                        break
+                    elif c == ord('q'):
+                        raise UserAbort
+                    
+            else:
+                curses.napms(200)
+                self.stdscr.nodelay(1)
                 c = self.stdscr.getch()
-                if c == ord('i'):
-                    self.run_interactive()
-                    return
-                elif c == ord(' '):
-                    break
+                while c != -1:
+                    if c == ord('i'):
+                        self.stdscr.nodelay(0)
+                        curses.flushinp()
+                        self.run_interactive()
+                        return
+                    elif c == ord('s'):
+                        self.step_by_step = True
+                        break
+                    elif c == ord('q'):
+                        raise UserAbort
+                    c = self.stdscr.getch()
+                self.stdscr.nodelay(0)
+                curses.flushinp()
             self.world.execute(move)
             self.update()
     
@@ -119,11 +150,13 @@ class RoguelikeInterface(object):
         
         self.curses_init()
         
-        if self.interactive:
-            self.run_interactive()
-        else:
-            self.run_noninteractive()
-    
+        try:
+            if self.interactive:
+                self.run_interactive()
+            else:
+                self.run_noninteractive()
+        except UserAbort:
+            pass
         
         self.curses_deinit()
         
@@ -131,5 +164,5 @@ class RoguelikeInterface(object):
             
 
 
-roguelike = RoguelikeInterface('../data/sample_maps/contest10.map', 'UULLLRLRLRL')
+roguelike = RoguelikeInterface('../data/sample_maps/contest10.map', 'UULLLRLRLRLRLRLRLRLRLRLRLRLRLRLRLRLRLRLRL')
 roguelike.run()
