@@ -223,16 +223,7 @@ def validate(map_number, route):
         
     return (score, map.get_map_string())
 
-    
-    
-def main():
-    map = Map.load('../data/sample_maps/contest8.map')
-    
-    play(map)
-
 
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
-    
-    main()
