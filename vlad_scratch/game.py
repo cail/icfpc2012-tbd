@@ -36,10 +36,40 @@ class Map(object):
             print ''.join(self.data[j, self.height-1-i] 
                           for j in range(self.width))
         print 'robot at', self.robot
+        
+    def move(self, dx, dy):
+        ''' move robot only 
+        
+        Without map update step. 
+        Return whether move was sucessfull.'''
+        
+        assert dx*dx+dy*dy == 1
+        
+        x, y = self.robot
+        new_cell = self.data.get((x+dx, y+dy), '#')
+        if new_cell in ' .\\O':
+            self.data[self.robot] = ' '
+            self.robot = x+dx, y+dy
+            self.data[self.robot] = 'R'
+            return True
+        
+        if dy == 0 and new_cell == '*':
+            behind = (x+2*dx, y+2*dy)
+            if self.data.get(behind) == ' ':
+                self.data[self.robot] = ' '
+                self.robot = x+dx, y+dy
+                self.data[self.robot] = 'R'
+                self.data[behind] = '*'
+                return True
+
+        return False
+        
             
     
 def main():
-    map = Map.load('contest1.map')
+    map = Map.load('../data/sample_maps/contest1.map')
+    map.show()
+    print map.move(-1, 0)
     map.show()
 
 
