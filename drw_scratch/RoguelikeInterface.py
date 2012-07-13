@@ -7,7 +7,10 @@ class RoguelikeInterface(object):
     def __init__(self, map_name, route=''):
         self.world = game.Map.load(map_name)
         self.route = route
-
+        
+        self.interactive = True if route == '' else False
+        self.step_by_step = True
+        
         self.stats_width = 20
         self.stats_height = 7
         
@@ -45,16 +48,25 @@ class RoguelikeInterface(object):
                                     self.stats_x + self.stats_width)
     
     def draw_help(self):
-        self.stdscr.addstr(self.help_y, self.help_x, "Controls: keypad and A, W")
+        if self.interactive:
+            help_text = "Controls: arrow keys and A, W"
+        elif self.step_by_step:
+            help_text = "Press space for next move, i to take over control"
+        else:
+            assert(False)
         
-    
+        self.stdscr.move(self.help_y, self.help_x)
+        self.stdscr.clrtoeol()
+        self.stdscr.addstr(self.help_y, self.help_x, help_text)
+        
+        
     def update(self):
         self.draw_stats()
         self.draw_world()
         self.draw_help()
         curses.doupdate()
     
-    def get_input(self):
+    def get_move(self):
         commands = {curses.KEY_LEFT: 'L', curses.KEY_RIGHT: 'R', \
                      curses.KEY_UP: 'U', curses.KEY_DOWN: 'D', \
                      ord('A'): 'A', ord('a'): 'A', ord('W'): 'W', ord('w'): 'W'}
@@ -80,18 +92,38 @@ class RoguelikeInterface(object):
         curses.reset_shell_mode()
         curses.endwin()
         
+    def run_interactive(self):
+        self.interactive = True
+        self.update()
+        while not self.world.dead:
+            move = self.get_move()
+            self.world.execute(move)
+            self.update()
+    
+    def run_noninteractive(self):
+        self.interactive = False
+        self.update()
+        for move in self.route:
+            while True:
+                c = self.stdscr.getch()
+                if c == ord('i'):
+                    self.run_interactive()
+                    return
+                elif c == ord(' '):
+                    break
+            self.world.execute(move)
+            self.update()
+    
     def run(self):
         assert(not self.finished)
         
         self.curses_init()
-        self.update()
         
-        while True:
-            move = self.get_input()
-            self.world.execute(move)
-            self.update()
-            if self.world.dead:
-                break
+        if self.interactive:
+            self.run_interactive()
+        else:
+            self.run_noninteractive()
+    
         
         self.curses_deinit()
         
@@ -99,5 +131,5 @@ class RoguelikeInterface(object):
             
 
 
-roguelike = RoguelikeInterface('../data/sample_maps/contest10.map', 'LRLRLRL')
+roguelike = RoguelikeInterface('../data/sample_maps/contest10.map', 'UULLLRLRLRL')
 roguelike.run()
