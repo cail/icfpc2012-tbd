@@ -1,6 +1,10 @@
-from game import Map, validate
+#import sys
+#sys.path.append('../production') # for pypy
+
 from time import clock
 
+from game import Map, validate
+from areas import filter_walls
 
 class C(object):
     pass
@@ -74,7 +78,7 @@ def solve(state):
         
     num_states = 0
         
-    for depth in range(1, 20):
+    for depth in range(1, 30):
         print 'depth', depth
         visited.clear() # because values for smaller depths are invalid
         rec(state, depth)
@@ -87,8 +91,10 @@ def solve(state):
         
 
 if __name__ == '__main__':
-    map_name = 'contest1'
+    map_name = 'contest2'
     map = Map.load_file('../data/sample_maps/{}.map'.format(map_name))
+    map.data = filter_walls(map.data) # minimize structures for cloning etc.
+    print len(map.data), 'nonwall cells'
     
     map.show()
     
