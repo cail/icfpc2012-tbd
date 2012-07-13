@@ -5,6 +5,8 @@ class Map(object):
         'width',
         'height',
         'data',
+        'initial_lambdas',
+        'commands',# list of commands executed so far
         'robot',   # (x, y); zero based, because!
         'aborted', # whether robot executed Abort
         'lifted',  # whether robot has entered lambda lift 
@@ -22,7 +24,9 @@ class Map(object):
         map.data = {}
         map.height = len(lines)
         map.width = len(lines[0].rstrip('\n'))
+        map.commands = []
         map.robot = None
+        map.initial_lambdas = 0
         map.aborted = False
         map.lifted = False
         map.dead = False
@@ -34,6 +38,8 @@ class Map(object):
                 if c == 'R':
                     assert map.robot is None
                     map.robot = j, i
+                elif c == '\\':
+                    map.initial_lambdas += 1
                 
         return map
     
@@ -41,7 +47,7 @@ class Map(object):
         for i in range(self.height):
             print ''.join(self.data[j, self.height-1-i] 
                           for j in range(self.width))
-        print 'robot at', self.robot
+        print 'robot at {}; current score is {}'.format(self.robot, self.intermediate_score())
         
     def execute_command(self, c):
         if c == 'L':
@@ -58,6 +64,7 @@ class Map(object):
             self.aborted = True
         else:
             raise 'unknown command'
+        self.commands.append(c)
         
     def move(self, dx, dy):
         ''' move robot only 
@@ -130,14 +137,23 @@ class Map(object):
                     
         data.update(**u)
         
+    def count_lambdas(self):
+        return sum(1 for c in self.data.values() if c == '\\')
+    
+    def collected_lambdas(self):
+        return self.initial_lambdas-self.count_lambdas()
+        
+    def intermediate_score(self):
+        return 25*self.collected_lambdas()-len(self.commands)
+        
     def ending(self):
         '''return either None or additional score'''
         if self.lifted:
-            return 50
+            return 75*self.collected_lambdas()-len(self.commands)
         if self.dead:
-            return 0
+            return 25*self.collected_lambdas()-len(self.commands)
         if self.aborted:
-            return 25
+            return 50*self.collected_lambdas()-len(self.commands)
     
                 
 
@@ -153,7 +169,7 @@ def play(map):
             e = map.ending()
             if e is not None:
                 map.show()
-                print 'Ending score:', e
+                print 'Final score:', e
                 return
     
     
