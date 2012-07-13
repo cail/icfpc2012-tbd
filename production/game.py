@@ -198,7 +198,8 @@ class Map(object):
         return self.initial_lambdas-self.count_lambdas()
         
     def intermediate_score(self):
-        return 25*self.collected_lambdas()-len(self.commands)
+        '''score assuming we abort in time'''
+        return 50*self.collected_lambdas()-len(self.commands)
         
     def ending(self):
         '''return either None or additional score'''

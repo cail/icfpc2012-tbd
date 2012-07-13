@@ -2,7 +2,7 @@ from game import Map, play
 
     
 def main():
-    map = Map.load('../data/sample_maps/contest8.map')
+    map = Map.load_file('../data/sample_maps/contest8.map')
     
     play(map)
     
