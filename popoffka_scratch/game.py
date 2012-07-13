@@ -15,31 +15,33 @@ class Map(object):
 
     @staticmethod
     def load(file_name):
-        map = Map()
+        m = Map()
         with open(file_name) as fin:
             lines = [line.rstrip() for line in fin]
 
-        assert all(len(line) == len(lines[0]) for line in lines)
+        m.width = max(map(len, lines))
+        for line in lines:
+            line.ljust(m.width)
 
-        map.data = {}
-        map.lambdas = 0
-        map.moves = 0
-        map.dead = False
-        map.lifted = False
-        map.aborted = False
-        map.height = len(lines)
-        map.width = len(lines[0].rstrip('\n'))
-        map.robot = None
+        m.data = {}
+        m.lambdas = 0
+        m.moves = 0
+        m.dead = False
+        m.lifted = False
+        m.aborted = False
+        m.height = len(lines)
+        m.width = len(lines[0].rstrip('\n'))
+        m.robot = None
 
         for i, line in enumerate(lines):
-            i = map.height-1-i
+            i = m.height-1-i
             for j, c in enumerate(line.strip('\n')):
-                map.data[j, i] = c
+                m.data[j, i] = c
                 if c == 'R':
-                    assert map.robot is None
-                    map.robot = j, i
+                    assert m.robot is None
+                    m.robot = j, i
 
-        return map
+        return m
 
     def show(self):
         for i in range(self.height):
@@ -160,6 +162,13 @@ class Map(object):
             self.moves += 1
             self.dead = self.dead or self.update()
             return not self.dead
+
+    def execute_whole(self, program):
+        for ch in program:
+            self.execute(ch)
+            if self.dead:
+                return
+        self.execute('A')
 
     def score(self):
         res = -self.moves
