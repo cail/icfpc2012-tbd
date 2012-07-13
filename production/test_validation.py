@@ -6,12 +6,14 @@ from webvalidator import validate
 
 def main():
     tests = [
+             
         ('flood1', 'LLLLDDDDDWWWWUUUWWWWWW'), # surface barely in time
         ('flood1', 'LLLLDDDDDWWWWWWWWWWWW'), # drowning
         ('flood1', 'W'*100), # passive drowning
              
         ('contest1', 'LDRDDULULLDD'), # complete solution
         ('contest8', 'WWWRRRLLLWWWA'), # abort or death?
+        ('contest2', 'RRUDRRULURULLLLDDDL'), # OPTIMAL solution
         
         # write your own tests, especially for interesting cases
         
