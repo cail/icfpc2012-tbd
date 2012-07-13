@@ -43,6 +43,22 @@ class Map(object):
                           for j in range(self.width))
         print 'robot at', self.robot
         
+    def execute_command(self, c):
+        if c == 'L':
+            self.move(-1, 0)
+        elif c == 'R':
+            self.move(1, 0)
+        elif c == 'U':
+            self.move(0, 1)
+        elif c == 'D':
+            self.move(0, -1)
+        elif c == 'W':
+            pass
+        elif c == 'A':
+            self.aborted = True
+        else:
+            raise 'unknown command'
+        
     def move(self, dx, dy):
         ''' move robot only 
         
@@ -124,16 +140,27 @@ class Map(object):
             return 25
     
                 
+
+def play(map):
+    while True:
+        map.show()
+        print '>>>',
+        commands = raw_input()
+        for c in commands:
+            map.execute_command(c)
+            map.show()
+            map.update()
+            e = map.ending()
+            if e is not None:
+                map.show()
+                print 'Ending score:', e
+                return
+    
     
 def main():
     map = Map.load('../data/sample_maps/contest1.map')
-    map.show()
-    print map.move(-1, 0)
-    map.show()
-    map.update()
-    map.show()
     
-    assert map.ending() is None
+    play(map)
 
 
 if __name__ == '__main__':
