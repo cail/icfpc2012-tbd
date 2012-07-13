@@ -64,12 +64,47 @@ class Map(object):
 
         return False
         
-            
+    def update(self):
+        data = self.data
+        u = {}
+        
+        has_lambdas = '\\' in data.values() 
+        # because lambdas can not disappear during updates 
+        
+        for (x, y), c in data.items():
+            # because it's actually irrelevant in what order we update
+            if c == '*':
+                under = data.get((x, y-1))
+                if under == ' ':
+                    u[x, y] = ' '
+                    u[x, y-1] = '*'
+                    continue
+                if under == '*':
+                    if data.get((x+1, y)) == ' ' and data.get((x+1, y-1)) == ' ':
+                        u[x, y] = ' '
+                        u[x+1, y-1] = '*'
+                        continue
+                    if data.get((x-1, y)) == ' ' and data.get((x-1, y-1)) == ' ':
+                        u[x, y] = ' '
+                        u[x-1, y-1] = '*'
+                        continue
+                if under == '\\':
+                    if data.get((x+1, y)) == ' ' and data.get((x+1, y-1)) == ' ':
+                        u[x, y] = ' '
+                        u[x+1, y-1] = '*'
+                        continue
+            if c == 'L' and not has_lambdas:
+                u[x, y] = 'O'
+                    
+        data.update(**u)
+                
     
 def main():
     map = Map.load('../data/sample_maps/contest1.map')
     map.show()
     print map.move(-1, 0)
+    map.show()
+    map.update()
     map.show()
 
 
