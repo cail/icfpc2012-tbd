@@ -1,6 +1,16 @@
 
 
 class Map(object):
+    '''
+    >>> map = Map.load('../data/sample_maps/contest1.map')
+    >>> for c in 'LDRDDULULLDDL':
+    ...     assert map.ending() is None
+    ...     map.execute_command(c)
+    ...     map.update()
+    >>> map.ending()
+    212
+    '''
+    
     __slots__ = [
         'width',
         'height',
@@ -156,7 +166,6 @@ class Map(object):
             return 50*self.collected_lambdas()-len(self.commands)
     
                 
-
 def play(map):
     map.show()
     while True:
@@ -180,4 +189,7 @@ def main():
 
 
 if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
+    
     main()

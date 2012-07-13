@@ -6,32 +6,33 @@ path = '/~edwin/cgi-bin/weblifter.cgi';
 headers = {"Content-type": "application/x-www-form-urlencoded",
                "Accept": "text/plain"}
 
-def validate(map, route, graceful=False):
+def validate(map_number, route, graceful=False):
     '''Validate route with official web validator.
     Graceful imposes a minimum time between uses.
     
-    Return tuple (score, map).
+    Return tuple (score, world).
     '''
-    assert map in xrange(1, 11), "Invalid map number"
+    assert map_number in xrange(1, 11), "Invalid map number"
     if graceful:
         assert_enough_time_elapsed()
     
-    params = urllib.urlencode({'mapfile': 'contest' + str(map), 'route': route})
+    params = urllib.urlencode({'mapfile': 'contest' + str(map_number), 'route': route})
     conn = httplib.HTTPConnection(server)
     conn.request("POST", path, params, headers)
     response = conn.getresponse()
     if response.status != 200:
         raise Exception('Server returned "%d %s"' % (response.status, response.reason))
-    print parse_response(response.read())
+    result = parse_response(response.read())
     conn.close()
+    return result
 
 def parse_response(data):
     match = re.match('.*<pre>(.*)\n</pre>.*Score: (.*?)<br>', data, flags=re.DOTALL)
     if not match:
         raise Exception('Can\'t parse server response')
-    map = match.group(1)
+    world = match.group(1)
     score = int(match.group(2))
-    return (score, map)
+    return (score, world)
 
 def assert_enough_time_elapsed():
     from simple_settings import settings
