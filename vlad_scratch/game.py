@@ -36,10 +36,75 @@ class Map(object):
             print ''.join(self.data[j, self.height-1-i] 
                           for j in range(self.width))
         print 'robot at', self.robot
-            
+        
+    def move(self, dx, dy):
+        ''' move robot only 
+        
+        Without map update step. 
+        Return whether move was sucessfull.'''
+        
+        assert dx*dx+dy*dy == 1
+        
+        x, y = self.robot
+        new_cell = self.data.get((x+dx, y+dy), '#')
+        if new_cell in ' .\\O':
+            self.data[self.robot] = ' '
+            self.robot = x+dx, y+dy
+            self.data[self.robot] = 'R'
+            return True
+        
+        if dy == 0 and new_cell == '*':
+            behind = (x+2*dx, y+2*dy)
+            if self.data.get(behind) == ' ':
+                self.data[self.robot] = ' '
+                self.robot = x+dx, y+dy
+                self.data[self.robot] = 'R'
+                self.data[behind] = '*'
+                return True
+
+        return False
+        
+    def update(self):
+        data = self.data
+        u = {}
+        
+        has_lambdas = '\\' in data.values() 
+        # because lambdas can not disappear during updates 
+        
+        for (x, y), c in data.items():
+            # because it's actually irrelevant in what order we update
+            if c == '*':
+                under = data.get((x, y-1))
+                if under == ' ':
+                    u[x, y] = ' '
+                    u[x, y-1] = '*'
+                    continue
+                if under == '*':
+                    if data.get((x+1, y)) == ' ' and data.get((x+1, y-1)) == ' ':
+                        u[x, y] = ' '
+                        u[x+1, y-1] = '*'
+                        continue
+                    if data.get((x-1, y)) == ' ' and data.get((x-1, y-1)) == ' ':
+                        u[x, y] = ' '
+                        u[x-1, y-1] = '*'
+                        continue
+                if under == '\\':
+                    if data.get((x+1, y)) == ' ' and data.get((x+1, y-1)) == ' ':
+                        u[x, y] = ' '
+                        u[x+1, y-1] = '*'
+                        continue
+            if c == 'L' and not has_lambdas:
+                u[x, y] = 'O'
+                    
+        data.update(**u)
+                
     
 def main():
-    map = Map.load('contest1.map')
+    map = Map.load('../data/sample_maps/contest1.map')
+    map.show()
+    print map.move(-1, 0)
+    map.show()
+    map.update()
     map.show()
 
 
