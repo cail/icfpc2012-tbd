@@ -1,6 +1,8 @@
 import httplib, urllib
 import re
 
+from simple_settings import settings
+
 server = 'undecidable.org.uk';
 path = '/~edwin/cgi-bin/weblifter.cgi';
 headers = {"Content-type": "application/x-www-form-urlencoded",
@@ -12,6 +14,12 @@ def validate(map_name, route, graceful=False):
     
     Return tuple (score, world).
     '''
+    key = 'online_validator.cached("%s", "%s")' % (map_name, route)
+    
+    cached = settings.get_value(key, '')
+    if cached != '':
+        return eval(cached)
+    
     if graceful:
         assert_enough_time_elapsed()
     
@@ -23,7 +31,11 @@ def validate(map_name, route, graceful=False):
         raise Exception('Server returned "%d %s"' % (response.status, response.reason))
     result = parse_response(response.read())
     conn.close()
+    
+    settings[key] = repr(result)
+    
     return result
+
 
 def parse_response(data):
     match = re.match('.*<pre>(.*)\n</pre>.*Score: (.*?)<br>', data, flags=re.DOTALL)
@@ -34,7 +46,6 @@ def parse_response(data):
     return (score, world)
 
 def assert_enough_time_elapsed():
-    from simple_settings import settings
     import time
     LAST_ACCESS_TIME_KEY = 'online_validator.last_access_time'
     MIN_TIME_BETWEEN_ACCESSES = 60.0 # 1 minute, living on the edge!
