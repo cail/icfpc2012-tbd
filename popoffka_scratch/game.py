@@ -169,7 +169,7 @@ class Map(object):
     def execute_whole(self, program):
         for ch in program:
             self.execute(ch)
-            if self.dead:
+            if self.done:
                 return
         self.execute('A')
 
