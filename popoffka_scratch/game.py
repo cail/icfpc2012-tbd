@@ -139,11 +139,12 @@ class Map(object):
         if command == 'A':
             self.done = True
             self.aborted = True
-            self.dead = self.update()
             return True
         elif command == 'W':
             self.moves += 1
             self.dead = self.update()
+            if self.dead:
+                self.done = True
             return not self.dead
         elif command in 'UDLR':
             dx = 0
@@ -164,6 +165,8 @@ class Map(object):
                 self.lifted = True
             self.moves += 1
             self.dead = self.update()
+            if self.dead:
+                self.done = True
             return not self.dead
 
     def execute_whole(self, program):
@@ -173,12 +176,12 @@ class Map(object):
                 return
         self.execute('A')
 
-    def score(self):
+    def score(self, assume_aborted=False):
         res = 25 * self.lambdas - self.moves
         if self.dead:
             return res
 
-        if self.aborted:
+        if self.aborted or assume_aborted:
             res += self.lambdas * 25
         if self.lifted:
             res += self.lambdas * 50
