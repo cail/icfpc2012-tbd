@@ -30,22 +30,48 @@ class Map(object):
         'aborted', # whether robot executed Abort
         'lifted',  # whether robot has entered lambda lift 
         'dead',    # whether robot was killed by rock
+        'water',
+        'flooding',
+        'waterproof',
     ]
+
+    def __init__(self):
+        self.data = {}
+        self.height = 0
+        self.width = 0
+        self.commands = []
+        self.robot = None
+        self.initial_lambdas = 0
+        self.aborted = False
+        self.lifted = False
+        self.dead = False
+        
+        self.water = 0
+        self.flooding = 0
+        self.waterproof = 10
+        
 
     @staticmethod
     def load(lines):
         map = Map()
         #assert all(len(line) == len(lines[0]) for line in lines)
+        
+        if '' in lines:
+            params = lines[lines.index('')+1:]
+            lines = lines[:lines.index('')]
+            for param in params:
+                name, value = param.split()
+                if name == 'Water':
+                    map.water = int(value)
+                elif name == 'Flooding':
+                    map.flooding = int(value)
+                elif name == 'Waterproof':
+                    map.waterproof = int(value)
+                else:
+                    assert False, param
                     
-        map.data = {}
         map.height = len(lines)
         map.width = max(len(line) for line in lines)
-        map.commands = []
-        map.robot = None
-        map.initial_lambdas = 0
-        map.aborted = False
-        map.lifted = False
-        map.dead = False
             
         for i, line in enumerate(lines):
             i = map.height-1-i

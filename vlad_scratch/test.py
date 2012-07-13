@@ -14,7 +14,8 @@ from game import Map, play, validate as my_validate
 if __name__ == '__main__':
     
     #args = 'contest1', 'LDRDDULULLDD'
-    args = 'contest8', 'WWWRRRLLLWWWA'
+    #args = 'contest8', 'WWWRRRLLLWWWA'
+    args = 'flood1', ''
     my = my_validate(*args)
     web = validate(*args)
     
