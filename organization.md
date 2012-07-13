@@ -5,10 +5,8 @@ To avoid clutter, I suggest to distinguish clearly between production and experi
  
 Production code is not allowed to depend on experimental code.
  
-When introducing changes to production code, make sure that no production code is broken.
+**When introducing changes to production code, make sure that no production code is broken.**
  
-Also, fj suggests to restrict shell scripts and command line interface to the very entry point of the final submission. Everything else is written as python scripts and is supposed to be executed from eclipse.
-
 
 Production code goes to eclipse project 'production'. 
 Experimental code can be put in any other project. Typically, but not necessarily, it's '<username>_scratch'. 
@@ -20,6 +18,15 @@ Same thing for data. If piece of datum is canonical or otherwise important to ev
 
 Commits affecting production code can be observed by 'gitk production'.
 
+To summarize, directory structure looks like this:
+
+    icfpc2012-tbd
+        production (eclipse project)
+           <nice, clean and reusable code>
+        data (bare directory)
+           <nice, clean and canonical data>
+        *_scratch (eclipse projects)
+           <put here whatever you want>
 
 ---
 
