@@ -22,8 +22,9 @@ def validate(map_number, route, graceful=False):
     response = conn.getresponse()
     if response.status != 200:
         raise Exception('Server returned "%d %s"' % (response.status, response.reason))
-    print parse_response(response.read())
+    result = parse_response(response.read())
     conn.close()
+    return result
 
 def parse_response(data):
     match = re.match('.*<pre>(.*)\n</pre>.*Score: (.*?)<br>', data, flags=re.DOTALL)
