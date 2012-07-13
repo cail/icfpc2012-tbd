@@ -16,9 +16,6 @@ def main():
         ('contest2', 'RRUDRRULURULLLLDDDL'), # OPTIMAL solution
         
         # write your own tests, especially for interesting cases
-        
-        # note that these tests are expensive unless we implement some form
-        # of server results caching
         ]
     
     for i, test in enumerate(tests):
