@@ -27,6 +27,7 @@ class Map(object):
         'initial_lambdas',
         'commands',# list of commands executed so far
         'robot',   # (x, y); zero based, because!
+        'lift',    # (x, y)
         'aborted', # whether robot executed Abort
         'lifted',  # whether robot has entered lambda lift 
         'dead',    # whether robot was killed by rock
@@ -42,6 +43,7 @@ class Map(object):
         self.width = 0
         self.commands = []
         self.robot = None
+        self.lift = None
         self.initial_lambdas = 0
         self.aborted = False
         self.lifted = False
@@ -86,6 +88,9 @@ class Map(object):
                     map.robot = j, i
                 elif c == '\\':
                     map.initial_lambdas += 1
+                elif c in 'LO':
+                    assert map.lift == None
+                    map.lift = j, i
             for j in range(len(line), map.width):
                 map.data[j, i] = ' '
                 
@@ -235,8 +240,13 @@ class Map(object):
                     
         data.update(**u)
         
+    def enumerate_lambdas(self):
+        for k, v in self.data.items():
+            if v == '\\':
+                yield k
+                
     def count_lambdas(self):
-        return sum(1 for c in self.data.values() if c == '\\')
+        return sum(1 for _ in self.enumerate_lambdas())
     
     def collected_lambdas(self):
         return self.initial_lambdas-self.count_lambdas()

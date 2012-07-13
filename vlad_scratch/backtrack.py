@@ -6,17 +6,29 @@ class C(object):
     pass
 
 
+def dist((x1, y1), (x2, y2)):
+    return abs(x1-x2)+abs(y1-y2)
+
+
 def upper_bound(state):
+    '''
+    Upper bound on total score
+    '''
     max_dist = 0
-    rx, ry = state.robot
-    for (x, y), cell in state.data.items():
-        if cell in 'LO\\':
-            max_dist = max(max_dist, abs(rx-x)+abs(ry-y))
+    
+    if state.data[state.lift] == 'O':
+        max_dist = dist(state.robot, state.lift)
+    else:
+        for xy in state.enumerate_lambdas():
+            max_dist = max(max_dist, 
+                           dist(state.robot, xy)+dist(xy, state.lift))
             
     return 75*state.initial_lambdas-state.time()-max_dist
 
 
 def solve(state):
+    start = clock()
+    
     best = C()
     
     best.score = 0
@@ -60,18 +72,23 @@ def solve(state):
                 check(e)
             commands.pop()
         
+    num_states = 0
+        
     for depth in range(1, 20):
         print 'depth', depth
         visited.clear() # because values for smaller depths are invalid
         rec(state, depth)
+        print len(visited), 'states visited'
+        num_states += len(visited)
         
-    print len(visited), 'states visited'
+    print '{} states visited total, ({} states per second)'.format(num_states, num_states/(clock()-start+0.01))
     
-    return best.score, best.solution    
+    return best.score, best.solution
         
 
 if __name__ == '__main__':
-    map = Map.load_file('../data/sample_maps/contest1.map')
+    map_name = 'contest1'
+    map = Map.load_file('../data/sample_maps/{}.map'.format(map_name))
     
     map.show()
     
@@ -81,8 +98,11 @@ if __name__ == '__main__':
     
     print 'it took', clock()-start
 
+    print '****'
+    print score, solution
+    
     print 'validating...',
-    validated_score, _ = validate(1, solution)
+    validated_score, _ = validate(map_name, solution)
     assert score == validated_score, (score, validated_score)
     print 'ok'
     
