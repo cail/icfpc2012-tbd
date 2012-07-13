@@ -27,13 +27,13 @@ class Map(object):
     def load(file_name):
         map = Map()
         with open(file_name) as fin:
-            lines = [line.rstrip() for line in fin]
+            lines = [line.rstrip('\n') for line in fin]
 
-        assert all(len(line) == len(lines[0]) for line in lines)
+        #assert all(len(line) == len(lines[0]) for line in lines)
                     
         map.data = {}
         map.height = len(lines)
-        map.width = len(lines[0].rstrip('\n'))
+        map.width = max(len(line) for line in lines)
         map.commands = []
         map.robot = None
         map.initial_lambdas = 0
@@ -43,20 +43,22 @@ class Map(object):
             
         for i, line in enumerate(lines):
             i = map.height-1-i
-            for j, c in enumerate(line.strip('\n')):
+            for j, c in enumerate(line):
                 map.data[j, i] = c
                 if c == 'R':
                     assert map.robot is None
                     map.robot = j, i
                 elif c == '\\':
                     map.initial_lambdas += 1
+            for j in range(len(line), map.width):
+                map.data[j, i] = ' '
                 
         return map
     
     def get_map_string(self):
         lines = []
         for i in range(self.height):
-            lines.append(''.join(self.data[j, self.height-1-i] 
+            lines.append(''.join(self.data.get((j, self.height-1-i), '#') 
                                  for j in range(self.width)))
         return '\n'.join(lines)
     
@@ -65,6 +67,8 @@ class Map(object):
         print 'robot at {}; current score is {}'.format(self.robot, self.intermediate_score())
         
     def execute_command(self, c):
+        assert c != 'A', 'according to webvalidator behavior, abort is not command'
+        
         if c == 'L':
             self.move(-1, 0)
         elif c == 'R':
@@ -166,10 +170,10 @@ class Map(object):
         '''return either None or additional score'''
         if self.lifted:
             return 75*self.collected_lambdas()-len(self.commands)
-        if self.dead:
-            return 25*self.collected_lambdas()-len(self.commands)
         if self.aborted:
             return 50*self.collected_lambdas()-len(self.commands)
+        if self.dead:
+            return 25*self.collected_lambdas()-len(self.commands)
     
                 
 def play(map):
@@ -178,14 +182,17 @@ def play(map):
         print '>>>',
         commands = raw_input()
         for c in commands:
+            if c == 'A':
+                e = map.intermediate_score()
+                break
             map.execute_command(c)
             map.update()
             map.show()
             e = map.ending()
             if e is not None:
-                map.show()
-                print 'Final score:', e
-                return
+                break
+    map.show()
+    print 'Final score:', e
             
             
 
@@ -199,6 +206,8 @@ def validate(map_number, route):
     
     e = None
     for c in route:
+        if c == 'A':
+            break
         map.execute_command(c)
         map.update()
         e = map.ending()
@@ -217,7 +226,7 @@ def validate(map_number, route):
     
     
 def main():
-    map = Map.load('../data/sample_maps/contest1.map')
+    map = Map.load('../data/sample_maps/contest8.map')
     
     play(map)
 

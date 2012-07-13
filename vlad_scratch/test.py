@@ -1,7 +1,7 @@
 
 
 from webvalidator import validate
-from game import Map, validate as my_validate
+from game import Map, play, validate as my_validate
 
     
 
@@ -12,10 +12,19 @@ from game import Map, validate as my_validate
 
 
 if __name__ == '__main__':
-    args = 1, 'LDRDDULULLDD'
+    
+    #args = 1, 'LDRDDULULLDD'
+    args = 8, 'WWWRRRLLLWWWA'
     my = my_validate(*args)
     web = validate(*args)
     
+    print 'my:'
+    print my[0]
+    print my[1]
+    print '---'
+    print 'theirs:'
+    print web[0]
+    print web[1]
     assert my == web, (my, web)
     
     
