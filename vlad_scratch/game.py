@@ -142,14 +142,14 @@ class Map(object):
                 
 
 def play(map):
+    map.show()
     while True:
-        map.show()
         print '>>>',
         commands = raw_input()
         for c in commands:
             map.execute_command(c)
-            map.show()
             map.update()
+            map.show()
             e = map.ending()
             if e is not None:
                 map.show()
