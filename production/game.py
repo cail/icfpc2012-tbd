@@ -1,3 +1,4 @@
+from copy import deepcopy
 
 
 class Map(object):
@@ -5,9 +6,17 @@ class Map(object):
     >>> map = Map.load_file('../data/sample_maps/contest1.map')
     >>> for c in 'LDRDDULULLDDL':
     ...     assert map.ending() is None
-    ...     map.execute_command(c)
+    ...     map.execute_command_inplace(c)
     ...     map.update()
     >>> map.ending()
+    212
+    
+    
+    Alternatively, in functional style:
+    >>> map = Map.load_file('../data/sample_maps/contest1.map')
+    >>> for c in 'LDRDDULULLDDL':
+    ...     map, e = map.execute_command(c)
+    >>> e
     212
     '''
     
@@ -41,6 +50,7 @@ class Map(object):
         for i, line in enumerate(lines):
             i = map.height-1-i
             for j, c in enumerate(line):
+                assert c in 'R#*\\.LO ', c
                 map.data[j, i] = c
                 if c == 'R':
                     assert map.robot is None
@@ -75,7 +85,7 @@ class Map(object):
         print self.get_map_string()
         print 'robot at {}; current score is {}'.format(self.robot, self.intermediate_score())
         
-    def execute_command(self, c):
+    def execute_command_inplace(self, c):
         assert c != 'A', 'according to webvalidator behavior, abort is not command'
         
         if c == 'L':
@@ -93,12 +103,27 @@ class Map(object):
         else:
             raise 'unknown command'
         self.commands.append(c)
+    
+    def execute_command(self, c):
+        '''
+        return pair (new map, final score or None)
+        '''
+        other = deepcopy(self)
+        other.execute_command_inplace(c)
+        other.update()
+        return other, other.ending()
+    
+    def freeze(self):
+        '''return immutable (hashable) state'''
+        data = frozenset(self.data.items())
+        return (data, len(self.commands), self.aborted, self.lifted, self.dead)
         
     def move(self, dx, dy):
         ''' move robot only 
         
         Without map update step. 
-        Return whether move was sucessfull.'''
+        Return whether move was sucessfull.
+        '''
         
         assert dx*dx+dy*dy == 1
         
@@ -194,7 +219,7 @@ def play(map):
             if c == 'A':
                 e = map.intermediate_score()
                 break
-            map.execute_command(c)
+            map.execute_command_inplace(c)
             map.update()
             map.show()
             e = map.ending()
@@ -217,7 +242,7 @@ def validate(map_number, route):
     for c in route:
         if c == 'A':
             break
-        map.execute_command(c)
+        map.execute_command_inplace(c)
         map.update()
         e = map.ending()
         if e is not None:
