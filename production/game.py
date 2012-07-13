@@ -2,7 +2,7 @@
 
 class Map(object):
     '''
-    >>> map = Map.load('../data/sample_maps/contest1.map')
+    >>> map = Map.load_file('../data/sample_maps/contest1.map')
     >>> for c in 'LDRDDULULLDDL':
     ...     assert map.ending() is None
     ...     map.execute_command(c)
@@ -24,11 +24,8 @@ class Map(object):
     ]
 
     @staticmethod
-    def load(file_name):
+    def load(lines):
         map = Map()
-        with open(file_name) as fin:
-            lines = [line.rstrip('\n') for line in fin]
-
         #assert all(len(line) == len(lines[0]) for line in lines)
                     
         map.data = {}
@@ -54,6 +51,18 @@ class Map(object):
                 map.data[j, i] = ' '
                 
         return map
+    
+    @staticmethod
+    def load_string(string):
+        lines = string.split('\n')
+        return Map.load(lines)
+        pass
+
+    @staticmethod
+    def load_file(file_name):
+        with open(file_name) as fin:
+            lines = [line.rstrip('\n') for line in fin]
+        return Map.load(lines)
     
     def get_map_string(self):
         lines = []
@@ -202,7 +211,7 @@ def validate(map_number, route):
     Follows webvalidator interface.
     Return tuple (score, world).
     '''
-    map = Map.load('../data/sample_maps/contest{}.map'.format(map_number))
+    map = Map.load_file('../data/sample_maps/contest{}.map'.format(map_number))
     
     e = None
     for c in route:
@@ -227,3 +236,4 @@ def validate(map_number, route):
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
+    my = validate(1, 'RRR')
