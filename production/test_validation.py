@@ -23,7 +23,8 @@ def main():
     
     for i, test in enumerate(tests):
         if i > 0:
-            sleep(60)
+            sleep(1) # no need to sleep too much because we cache anyway
+            
         print '{}% {}'.format(100*(i+1)//len(tests), test),
         local = local_validate(*test)
         web = validate(*test)
