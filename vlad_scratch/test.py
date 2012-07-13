@@ -13,16 +13,17 @@ from game import Map, play, validate as my_validate
 
 if __name__ == '__main__':
     
-    #args = 'contest1', 'LDRDDULULLDD'
-    #args = 'contest8', 'WWWRRRLLLWWWA'
-    args = 'flood1', ''
+    args = 'flood1', 'LLLLDDDDDWWWWUWWW'
     my = my_validate(*args)
-    web = validate(*args)
     
     print 'my:'
     print my[0]
     print my[1]
     print '---'
+    
+    #exit()
+    
+    web = validate(*args)
     print 'theirs:'
     print web[0]
     print web[1]

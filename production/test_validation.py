@@ -6,10 +6,17 @@ from webvalidator import validate
 
 def main():
     tests = [
+        ('flood1', 'LLLLDDDDDWWWWUUUWWWWWW'), # surface barely in time
+        ('flood1', 'LLLLDDDDDWWWWWWWWWWWW'), # drowning
+        ('flood1', 'W'*100), # passive drowning
+             
         ('contest1', 'LDRDDULULLDD'), # complete solution
         ('contest8', 'WWWRRRLLLWWWA'), # abort or death?
         
         # write your own tests, especially for interesting cases
+        
+        # note that these tests are expensive unless we implement some form
+        # of server results caching
         ]
     
     for i, test in enumerate(tests):
@@ -19,7 +26,7 @@ def main():
         local = local_validate(*test)
         web = validate(*test)
         if local == web:
-            print 'ok'
+            print 'ok (score {})'.format(local[0])
         else:
             print 'FAIL !!!!!!!'
             print 'local:'

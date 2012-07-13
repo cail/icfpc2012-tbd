@@ -97,7 +97,9 @@ class Map(object):
     def water_level(self):
         if self.flooding == 0:
             return 0
-        return self.water+self.time//self.flooding
+        return self.water+(self.time()-1)//self.flooding-1
+        # time-1 because we check it in update
+        # -1 because our coords are zero-based
     
     @staticmethod
     def load_string(string):
@@ -187,6 +189,11 @@ class Map(object):
         return False
         
     def update(self):
+        
+        _, y = self.robot
+        if y <= self.water_level():
+            self.underwater += 1
+        
         data = self.data
         u = {}
         
@@ -240,6 +247,11 @@ class Map(object):
         
     def ending(self):
         '''return either None or additional score'''
+        
+        # TODO: clarify in what order winning and drowning are tested
+        
+        if self.underwater > self.waterproof:
+            return 25*self.collected_lambdas()-self.time()
         if self.lifted:
             return 75*self.collected_lambdas()-self.time()
         if self.aborted:
