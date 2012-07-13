@@ -33,6 +33,7 @@ class Map(object):
         'water',
         'flooding',
         'waterproof',
+        'underwater', # time spend underwater
     ]
 
     def __init__(self):
@@ -49,6 +50,8 @@ class Map(object):
         self.water = 0
         self.flooding = 0
         self.waterproof = 10
+        
+        self.underwater = 0
         
 
     @staticmethod
@@ -87,6 +90,14 @@ class Map(object):
                 map.data[j, i] = ' '
                 
         return map
+    
+    def time(self):
+        return len(self.commands)
+    
+    def water_level(self):
+        if self.flooding == 0:
+            return 0
+        return self.water+self.time//self.flooding
     
     @staticmethod
     def load_string(string):
@@ -142,7 +153,7 @@ class Map(object):
     def freeze(self):
         '''return immutable (hashable) state'''
         data = frozenset(self.data.items())
-        return (data, len(self.commands), self.aborted, self.lifted, self.dead)
+        return (data, self.time(), self.aborted, self.lifted, self.dead)
         
     def move(self, dx, dy):
         ''' move robot only 
@@ -225,16 +236,16 @@ class Map(object):
         
     def intermediate_score(self):
         '''score assuming we abort in time'''
-        return 50*self.collected_lambdas()-len(self.commands)
+        return 50*self.collected_lambdas()-self.time()
         
     def ending(self):
         '''return either None or additional score'''
         if self.lifted:
-            return 75*self.collected_lambdas()-len(self.commands)
+            return 75*self.collected_lambdas()-self.time()
         if self.aborted:
-            return 50*self.collected_lambdas()-len(self.commands)
+            return 50*self.collected_lambdas()-self.time()
         if self.dead:
-            return 25*self.collected_lambdas()-len(self.commands)
+            return 25*self.collected_lambdas()-self.time()
     
                 
 def play(map):

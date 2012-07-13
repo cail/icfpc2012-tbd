@@ -13,7 +13,7 @@ def upper_bound(state):
         if cell in 'LO\\':
             max_dist = max(max_dist, abs(rx-x)+abs(ry-y))
             
-    return 75*state.initial_lambdas-len(state.commands)-max_dist
+    return 75*state.initial_lambdas-state.time()-max_dist
 
 
 def solve(state):
