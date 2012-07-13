@@ -53,10 +53,15 @@ class Map(object):
                 
         return map
     
-    def show(self):
+    def get_map_string(self):
+        lines = []
         for i in range(self.height):
-            print ''.join(self.data[j, self.height-1-i] 
-                          for j in range(self.width))
+            lines.append(''.join(self.data[j, self.height-1-i] 
+                                 for j in range(self.width)))
+        return '\n'.join(lines)
+    
+    def show(self):
+        print self.get_map_string()
         print 'robot at {}; current score is {}'.format(self.robot, self.intermediate_score())
         
     def execute_command(self, c):
@@ -91,7 +96,8 @@ class Map(object):
                 self.lifted = True
             self.data[self.robot] = ' '
             self.robot = x+dx, y+dy
-            self.data[self.robot] = 'R'
+            if new_cell != 'O':
+                self.data[self.robot] = 'R'
             return True
         
         if dy == 0 and new_cell == '*':
@@ -180,6 +186,34 @@ def play(map):
                 map.show()
                 print 'Final score:', e
                 return
+            
+            
+
+def validate(map_number, route):
+    '''Validate with my emulator
+    
+    Follows webvalidator interface.
+    Return tuple (score, world).
+    '''
+    map = Map.load('../data/sample_maps/contest{}.map'.format(map_number))
+    
+    e = None
+    for c in route:
+        map.execute_command(c)
+        map.update()
+        e = map.ending()
+        if e is not None:
+            break
+    
+    if e is not None:
+        score = e
+    else:
+        map.aborted = True
+        score = map.ending()
+        assert score is not None
+        
+    return (score, map.get_map_string())
+
     
     
 def main():
