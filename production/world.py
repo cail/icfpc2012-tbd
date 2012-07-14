@@ -122,6 +122,7 @@ class World(object):
                 if new_world.collected_lambdas == new_world.total_lambdas:
                     new_data[self.lift] = 'O'
             elif new_cell == 'O':
+                new_data[robot] = ' '
                 return new_world, new_world.get_score_win()
             elif new_cell == '*' and data[new_robot + direction] == ' ':
                 new_data[new_robot + direction] = '*'                
