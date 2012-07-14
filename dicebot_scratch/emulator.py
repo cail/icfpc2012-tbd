@@ -11,3 +11,19 @@ def interpret(world_string, commands):
         if score is not None:
             break
     return score
+
+def interpret_dict(world_string, commands):
+    instance = dict_world.DictWorld.from_string(world_string)
+    for cmd in commands:
+        instance, score = instance.apply_command(cmd)
+        if score is not None:
+            break
+    return score
+
+def interpret_main(world_string, commands):
+    instance = world.World.from_string(world_string)
+    for cmd in commands:
+        instance, score = instance.apply_command(cmd)
+        if score is not None:
+            break
+    return score

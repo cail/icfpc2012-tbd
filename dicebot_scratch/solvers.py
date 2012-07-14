@@ -17,4 +17,4 @@ class strategy:
     pass
 
 def enumerate_all():
-    return [ strategy('name1'), strategy('name2') ]
+    return [ strategy('fuzzy') ]
