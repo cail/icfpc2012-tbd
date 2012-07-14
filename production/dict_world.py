@@ -186,6 +186,10 @@ class DictWorld(object):
         
     def update(self):
         
+        if self.lifted:
+            # their web emulator does that!
+            return
+        
         _, y = self.robot
         if y <= self.water_level():
             self.underwater += 1

@@ -7,12 +7,13 @@ def validate(simulator, map_name, route):
     simulator class. 
     Return tuple (score, world).
     '''
+    
+    route, _, _ = route.partition('A')
+    
     world = simulator.load_file('../data/sample_maps/{}.map'.format(map_name))
     
     e = None
     for c in route:
-        if c == 'A':
-            break
         world, e = world.apply_command(c)
         if e is not None:
             break

@@ -12,9 +12,11 @@ def main():
         ('flood1', 'LLLLDDDDDWWWWWWWWWWWW'), # drowning
         ('flood1', 'W'*100), # passive drowning
              
-        ('contest1', 'LDRDDULULLDD'), # complete solution
+        ('contest1', 'LDRDDULULLDD'), # almost complete solution
+        ('contest1', 'LDRDDULULLDDL'), # complete optimal solution
+        ('contest2', 'RRUDRRULURULLLLDDDL'), # complete optimal solution
+        
         ('contest8', 'WWWRRRLLLWWWA'), # abort or death?
-        ('contest2', 'RRUDRRULURULLLLDDDL'), # OPTIMAL solution
         
         # write your own tests, especially for interesting cases
         ]
