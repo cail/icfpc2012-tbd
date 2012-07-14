@@ -17,7 +17,7 @@ def play(world):
 
 
     if e is None:
-        e = world.intermediate_score()
+        e = world.get_score_abort()
     
     print 'Final score:', e
     

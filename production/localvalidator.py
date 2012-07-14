@@ -21,7 +21,7 @@ def validate(simulator, map_name, route):
     if e is not None:
         score = e
     else:
-        score = world.intermediate_score()
+        score = world.get_score_abort()
         assert score is not None
         
     return (score, world.get_map_string())

@@ -9,6 +9,8 @@ def find_single_item(data, value):
 class World(object):
     '''
     >>> world = World.from_file('../data/sample_maps/contest1.map')
+    >>> world.get_score_abort() # abort is part of public interface too!
+    0
     >>> for c in 'LDRDDULULLDDL':
     ...     world, final_score = world.apply_command(c)
     ...     if final_score is not None: break

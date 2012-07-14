@@ -4,7 +4,7 @@ from copy import deepcopy
 class DictWorld(object):
     '''
     >>> world = DictWorld.from_file('../data/sample_maps/contest1.map')
-    >>> world.intermediate_score()
+    >>> world.get_score_abort()
     0
     >>> for c in 'LDRDDULULLDDL':
     ...     world, final_score = world.apply_command(c)
@@ -118,7 +118,7 @@ class DictWorld(object):
     
     def show(self):
         print self.get_map_string()
-        print 'robot at {}; current score is {}'.format(self.robot, self.intermediate_score())
+        print 'robot at {}; current score is {}'.format(self.robot, self.get_score_abort())
         
     def execute_command_inplace(self, c):
         assert c != 'A', 'according to webvalidator behavior, abort is not command'
@@ -246,8 +246,7 @@ class DictWorld(object):
     def collected_lambdas(self):
         return self.initial_lambdas-self.count_lambdas()
         
-    def intermediate_score(self):
-        '''score assuming we abort in time'''
+    def get_score_abort(self):
         return 50*self.collected_lambdas()-self.time
         
     def ending(self):
