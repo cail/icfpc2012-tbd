@@ -1,12 +1,15 @@
 import warnings
 from itertools import imap
 
+from world_base import WorldBase
+
+
 def find_single_item(data, value):
     idx = data.index(value)
     assert all(c != value for c in data[idx + 1:])
     return idx
     
-class World(object):
+class World(WorldBase):
     '''
     >>> world = World.from_file('../data/sample_maps/contest1.map')
     >>> world.get_score_abort() # abort is part of public interface too!
@@ -70,11 +73,6 @@ class World(object):
         world.collected_lambdas = 0
         world.time = 0
         return world
-
-    @classmethod
-    def from_file(cls, filename):
-        with open(filename) as f:
-            return cls.from_string(f.read())
     
     def get_map_string(self):
         lines = []
@@ -90,9 +88,6 @@ class World(object):
     def get_score_lose(self):
         return self.collected_lambdas * 25 - self.time
     
-    def get_score_abort(self):
-        return self.collected_lambdas * 50 - self.time
-
     def get_score_win(self):
         return self.collected_lambdas * 75 - self.time
 

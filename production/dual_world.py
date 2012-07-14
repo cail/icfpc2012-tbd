@@ -1,10 +1,17 @@
+from world_base import WorldBase
 
-
-class DualWorld(object):
+class DualWorld(WorldBase):
     def __init__(self, w1, w2):
         self.w1 = w1
         self.w2 = w2
         assert w1.get_map_string() == w2.get_map_string()
+        
+    @staticmethod
+    def from_string(s):
+        from dict_world import DictWorld
+        from world import World
+        return DualWorld(DictWorld.from_string(s), 
+                         World.from_string(s))
         
     def apply_command(self, c):
         w1, e1 = self.w1.apply_command(c)

@@ -1,7 +1,9 @@
 from copy import deepcopy
 
+from world_base import WorldBase
 
-class DictWorld(object):
+
+class DictWorld(WorldBase):
     '''
     >>> world = DictWorld.from_file('../data/sample_maps/contest1.map')
     >>> world.get_score_abort()
@@ -103,11 +105,6 @@ class DictWorld(object):
         return self.water+(self.time-1)//self.flooding-1
         # time-1 because we check it in update
         # -1 because our coords are zero-based
-    
-    @classmethod
-    def from_file(cls, filename):
-        with open(filename) as f:
-            return cls.from_string(f.read())
     
     def get_map_string(self):
         lines = []
@@ -243,25 +240,23 @@ class DictWorld(object):
     def count_lambdas(self):
         return sum(1 for _ in self.enumerate_lambdas())
     
+    @property
     def collected_lambdas(self):
         return self.initial_lambdas-self.count_lambdas()
-        
-    def get_score_abort(self):
-        return 50*self.collected_lambdas()-self.time
-        
+                
     def ending(self):
         '''return either None or additional score'''
         
         # TODO: clarify in what order winning and drowning are tested
         
         if self.underwater > self.waterproof:
-            return 25*self.collected_lambdas()-self.time
+            return 25*self.collected_lambdas-self.time
         if self.lifted:
-            return 75*self.collected_lambdas()-self.time
+            return 75*self.collected_lambdas-self.time
         if self.aborted:
-            return 50*self.collected_lambdas()-self.time
+            return 50*self.collected_lambdas-self.time
         if self.dead:
-            return 25*self.collected_lambdas()-self.time
+            return 25*self.collected_lambdas-self.time
     
                 
 
