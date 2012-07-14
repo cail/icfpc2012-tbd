@@ -16,6 +16,7 @@ def main():
         ('contest1', 'LDRDDULULLDD'), # almost complete solution
         ('contest1', 'LDRDDULULLDDL'), # complete optimal solution
         ('contest2', 'RRUDRRULURULLLLDDDL'), # complete optimal solution
+        ('contest3', 'LDDDRRRRDDLLLLLDRRURRURUR'), # complete optimal(?) solution
         
         ('contest8', 'WWWRRRLLLWWWA'), # abort or death?
 
