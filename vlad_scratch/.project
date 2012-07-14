@@ -3,6 +3,7 @@
 	<name>vlad_scratch</name>
 	<comment></comment>
 	<projects>
+		<project>fj_scratch</project>
 		<project>production</project>
 	</projects>
 	<buildSpec>
