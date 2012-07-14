@@ -1,10 +1,16 @@
+import random
+
 class strategy:
     def __init__(self, name):
         self.name = name
     
     def solve(self, world):
-        return 'R';
-    
+        actions = [ 'L', 'R', 'U', 'D', 'W' ]
+        solution = ''        
+        for _ in world:
+            solution += random.choice(actions)
+        return solution
+        
     def name(self):
         return self.name
     
