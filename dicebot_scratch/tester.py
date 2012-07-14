@@ -1,21 +1,26 @@
-import generator
+import worlds
 import emulator
 import solvers
+import random
 
 import time
+from itertools import chain
 
 def test_all():
     results = { }
     count = 1
-    for world in generator.generate_some_random( 3, 5, 5 ):
+    for world in chain( 
+                       worlds.create_some_random(amount = 3, height = 4, width = 5),
+                       worlds.load_official_worlds(),
+                       worlds.load_our_worlds()
+                    ):
         for solver in solvers.enumerate_all():
             time1 = time.time()
-            commands = solver.solve(world)
+            commands = solver.solve(world[1])
             time_taken = time.time() - time1
-            score = emulator.interpret(world, commands)
-            name = 'random.%s' % count
-            results[name] = { }
-            results[name][solver.name] = { 'score' : score, 'time' : time_taken };      
+            score = emulator.interpret(world[1], commands)            
+            results[world[0]] = { }
+            results[world[0]][solver.name] = { 'score' : score, 'time' : time_taken };      
         count += 1  
     return results
     
@@ -34,4 +39,5 @@ def print_metrics(metrics):
         i += 1
             
 if __name__ == '__main__':
+    random.seed(time.time())
     print_metrics( test_all() )
