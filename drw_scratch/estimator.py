@@ -1,5 +1,8 @@
 from collections import defaultdict
 import itertools
+from copy import deepcopy
+
+import TSP
 
 class ScoreEstimator(object):
 	def __init__(self, data):
@@ -40,18 +43,24 @@ class ScoreEstimator(object):
 			front = new_front
 		return distances
 					
-	def estimate(self, lambdas_collected, robot):
+	def estimate(self, lambdas_collected, robot, clever=True):
 		''' Estimate maximum achievable score.
 			Currently assumes that we won't stop prematurely. '''
-		lambdas_remaining = set(self.lambdas) - set(lambdas_collected)
+		lambdas_remaining = list(set(self.lambdas) - set(lambdas_collected))
 		distances_from_robot = self.distances_from_source(robot, \
 														list(lambdas_remaining) + [self.lift])
 		
-		tour_length = self.find_tour(lambdas_remaining, robot, distances_from_robot)
+		tour_length = self.find_tour(lambdas_remaining, robot, distances_from_robot, clever)
 		
 		return -tour_length + 75 * len(self.lambdas)
+	
+	def find_tour(self, lambdas_remaining, robot, distances_from_robot, clever):
+		if clever:
+			return self.find_tour_clever(lambdas_remaining, robot, distances_from_robot)
+		else:
+			return self.find_tour_NN(lambdas_remaining, robot, distances_from_robot)
 		
-	def find_tour(self, lambdas_remaining, robot, distances_from_robot):
+	def find_tour_NN(self, lambdas_remaining, robot, distances_from_robot):
 		# nearest neighbour
 		# placeholder code
 		# untested
@@ -68,7 +77,22 @@ class ScoreEstimator(object):
 			last_point = next_point
 		tour_length += distances_from_robot[last_point]
 		return tour_length
-			
+	
+	def find_tour_clever(self, lambdas_remaining, robot, distances_from_robot):
+		weights = deepcopy(self.distances)
+		weights[robot] = distances_from_robot
+		for point in lambdas_remaining + [self.lift]:
+			weights[point][robot] = distances_from_robot[point]
+		tour = TSP.solve_TSP(lambdas_remaining + [self.lift, robot], weights, robot, self.lift)
+		
+		tour_length = 0
+		point = tour[0]
+		for next_point in tour[1:]:
+			tour_length += weights[point][next_point]
+			next_point = point
+		return tour_length  
+		
+	
 	def debug_print(self):
 		inf = 10**6
 		x1, y1 = inf, inf
@@ -115,21 +139,29 @@ def simplify(data):
 
 argmin = lambda funct, items: min(itertools.izip(itertools.imap(funct, items), items))
 
-if __name__ == '__main__':
-	import game
+
+
+import game
+def create_estimator(map_name):
+	m = game.Map.load_file('../data/sample_maps/{}.map'.format(map_name))
+	return ScoreEstimator(m.data)
+
+def test():
+	# crappy unit test
+	estimator = create_estimator('contest10')
+	contest10_distances = [(1, 16), (2, 9), (2, 16), (3, 9), (3, 19), (3, 20), (3, 21), (4, 9), (4, 18), (4, 21), (5, 4), (5, 5), (5, 7), (5, 19), (5, 20), (6, 4), (6, 5), (6, 7), (6, 20), (7, 4), (7, 5), (7, 20), (8, 4), (8, 5), (14, 4), (15, 4), (16, 10), (16, 13), (17, 11), (17, 15), (19, 11), (20, 11), (20, 19), (21, 6), (21, 20), (22, 3), (22, 4), (22, 6), (22, 20), (23, 3), (23, 6), (24, 3), (24, 6), (25, 3), (25, 20), (26, 12), (27, 0), (27, 4), (27, 5), (27, 6), (27, 12), (27, 22)]
+	assert(sorted(estimator.distances) == contest10_distances)
+
+def benchmark():
+	# crappy benchmark
 	map_name = 'contest10'
 	m = game.Map.load_file('../data/sample_maps/{}.map'.format(map_name))
-	
-	benchmark = False
-	#benchmark = True
-	if benchmark:
-		# crappy benchmark
-		for i in xrange(50):
-			estimator = ScoreEstimator(m.data)
-	else:
-		# crappy unit test
+	for i in xrange(50):
 		estimator = ScoreEstimator(m.data)
-		contest10_distances = [(1, 16), (2, 9), (2, 16), (3, 9), (3, 19), (3, 20), (3, 21), (4, 9), (4, 18), (4, 21), (5, 4), (5, 5), (5, 7), (5, 19), (5, 20), (6, 4), (6, 5), (6, 7), (6, 20), (7, 4), (7, 5), (7, 20), (8, 4), (8, 5), (14, 4), (15, 4), (16, 10), (16, 13), (17, 11), (17, 15), (19, 11), (20, 11), (20, 19), (21, 6), (21, 20), (22, 3), (22, 4), (22, 6), (22, 20), (23, 3), (23, 6), (24, 3), (24, 6), (25, 3), (25, 20), (26, 12), (27, 0), (27, 4), (27, 5), (27, 6), (27, 12), (27, 22)]
-		assert(sorted(estimator.distances) == contest10_distances)
 		
-		estimator.estimate(set(), (0,0))
+if __name__ == '__main__':
+	#benchmark()
+	#test()
+	estimator = create_estimator('contest1')
+	print estimator.estimate(set(), (0,0), clever=False)
+	print estimator.estimate(set(), (0,0), clever=True)
