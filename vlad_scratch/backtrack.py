@@ -7,7 +7,8 @@ from dual_world import DualWorld
 from world import World
 from dict_world import DictWorld
 from localvalidator import validate
-from areas import filter_walls
+
+from preprocessor import preprocess_world
 
 class C(object):
     pass
@@ -17,23 +18,58 @@ def dist((x1, y1), (x2, y2)):
     return abs(x1-x2)+abs(y1-y2)
 
 
+def aggressive_preprocess(world):
+    '''
+    inplace, because why not?
+    '''
+    #return
+
+    data = world.data
+    rxy = world.robot_coords
+    num_lambdas = 0
+    for i in range(len(data)):
+        xy = world.index_to_coords(i)
+        if dist(rxy, xy) > 7:
+            if data[i] == '\\':
+                num_lambdas += 1
+            data[i] = '!'
+    data.extend(['\\']*num_lambdas)
+    
+
 def upper_bound(state):
     '''
     Upper bound on total score
     '''
-    max_dist = 0
     
-    if state[state.lift_coords] == 'O':
-        max_dist = dist(state.robot_coords, state.lift_coords)
+    collectable_lambdas = state.collected_lambdas+sum(1 for _ in state.enumerate_lambdas())
+
+    # TODO: take trampolines into account
+
+    if collectable_lambdas == state.total_lambdas:
+            
+        if state.collected_lambdas == state.total_lambdas:
+            max_dist = dist(state.robot_coords, state.lift_coords)
+        else:
+            max_dist = 0
+            for xy in state.enumerate_lambdas():
+                max_dist = max(max_dist, 
+                               dist(state.robot_coords, xy)+dist(xy, state.lift_coords))
+        return 75*state.total_lambdas-state.time-max_dist
+    
     else:
+        max_dist = 0
         for xy in state.enumerate_lambdas():
             max_dist = max(max_dist, 
-                           dist(state.robot_coords, xy)+dist(xy, state.lift_coords))
-            
-    return 75*state.total_lambdas-state.time-max_dist
+                           dist(state.robot_coords, xy))
+                    
+        return 50*collectable_lambdas-state.time-max_dist
+
+
+TIME_LIMIT = 15
 
 
 def solve(state):
+    
     start = clock()
     
     best = C()
@@ -52,16 +88,24 @@ def solve(state):
     visited = {}
     
     def rec(state, depth):
+        if clock() - start > TIME_LIMIT:
+            return
+        
         s = state.get_score_abort()
         
         if depth <= 0:
             check(s)
             return
 
-        if upper_bound(state) <= best.score:
+        preprocessed = preprocess_world(state)
+        
+        ub = upper_bound(preprocessed)
+        if upper_bound(preprocessed) <= best.score:
             return
+        
+        aggressive_preprocess(preprocessed)
 
-        frozen_state = hash(state.freeze())
+        frozen_state = hash(preprocessed.freeze())
         old_score = visited.get(frozen_state)
         if old_score is not None and s <= old_score:
             return
@@ -81,7 +125,9 @@ def solve(state):
         
     num_states = 0
         
-    for depth in range(1, 40, 3):
+    for depth in range(1, 100, 3):
+        if clock() - start > TIME_LIMIT:
+            break
         print 'depth', depth
         visited.clear() # because values for smaller depths are invalid
         rec(state, depth)
@@ -96,8 +142,8 @@ def solve(state):
         
 
 if __name__ == '__main__':
-    map_name = 'contest1'
-    map = DualWorld.from_file('../data/sample_maps/{}.map'.format(map_name))
+    map_name = 'contest9'
+    map = World.from_file('../data/sample_maps/{}.map'.format(map_name))
     #map.data = filter_walls(map.data) # minimize structures for cloning etc.
     #print len(map.data), 'nonwall cells'
     
