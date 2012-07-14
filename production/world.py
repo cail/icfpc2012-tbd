@@ -43,7 +43,11 @@ class World(WorldBase):
 
     @classmethod
     def from_string(World, src):
-        assert all(c in 'R#.*\\LO \n' for c in src)
+        try:
+            assert all(c in 'R#.*\\LO \n' for c in src)
+        except AssertionError:
+            print src
+            raise
         lines = src.split('\n')
         if lines[-1] == '': del lines[-1]
         

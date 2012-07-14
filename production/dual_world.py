@@ -11,6 +11,7 @@ class DualWorld(WorldBase):
             print s1
             print '---'
             print s2
+            print '---'
             assert False
         
     @staticmethod

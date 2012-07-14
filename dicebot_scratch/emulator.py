@@ -7,9 +7,7 @@ def interpret(world_string, commands):
     instance2 = world.World.from_string(world_string)
     instance_dual = dual_world.DualWorld(instance1, instance2)
     for cmd in commands:
-        instance_dual.execute_command(cmd)
-        instance_dual.update()
-        if (instance_dual.aborted or instance_dual.dead 
-                or instance_dual.lifted):
+        instance_dual, score = instance_dual.apply_command(cmd)
+        if score is not None:
             break
-    return instance_dual.ending()
+    return score

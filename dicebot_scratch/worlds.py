@@ -24,7 +24,6 @@ def create_chaotic(height, width, properties):
                 else:
                     result += random.choice(Fields[2:-1])
         result += '\n'
-    result += '\n'
     return result
 
 random_generator_table = {
