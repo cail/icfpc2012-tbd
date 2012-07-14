@@ -1,7 +1,8 @@
 
 
+from dual_world import DualWorld
+from localvalidator import validate as local_validate
 from webvalidator import validate
-from game import DictWorld, play, validate as my_validate
 
     
 
@@ -13,8 +14,8 @@ from game import DictWorld, play, validate as my_validate
 
 if __name__ == '__main__':
     
-    args = 'flood1', 'LLLLDDDDDWWWWUWWW'
-    my = my_validate(*args)
+    args = 'contest1', 'LLLLDDDDDWWWWUWWW'
+    my = local_validate(DualWorld, *args)
     
     print 'my:'
     print my[0]
@@ -27,7 +28,9 @@ if __name__ == '__main__':
     print 'theirs:'
     print web[0]
     print web[1]
+    
     assert my == web, (my, web)
+    print "they are the same"
     
     
     
