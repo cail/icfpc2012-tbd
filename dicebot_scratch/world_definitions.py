@@ -1,2 +1,2 @@
-Fields = [ 'R', '.', '#', "*", '\\', ' ', 'L' ]
-Robot, Earth, Wall, Stone, Lambda, Empty, Lift = Fields 
+Fields = [ 'R', 'L', '.', '#', "*", '\\', ' ' ]
+Robot, Lift, Earth, Wall, Stone, Lambda, Empty = Fields 
