@@ -2,6 +2,7 @@ import sys
 sys.path.append('../production') # for pypy
 
 from time import clock
+from itertools import *
 
 from dual_world import DualWorld
 from world import World
@@ -43,7 +44,7 @@ def upper_bound(state):
     
     collectable_lambdas = state.collected_lambdas+sum(1 for _ in state.enumerate_lambdas())
 
-    # TODO: take trampolines into account
+    # TODO: take trampolines into account in max_dist calculation
 
     if collectable_lambdas == state.total_lambdas:
             
@@ -67,6 +68,14 @@ def upper_bound(state):
 
 TIME_LIMIT = 15
 
+
+def apply_commands(world, cmds):
+    for cmd in cmds:
+        world, e = world.apply_command(cmd)
+        if e is not None:
+            break
+    return world, e
+    
 
 def solve(state):
     
@@ -114,22 +123,36 @@ def solve(state):
         
         check(s)
         
-        for cmd in 'LRUDW':
-            commands.append(cmd)
-            new_state, e = state.apply_command(cmd)
+        zzz = 'LRUDW'
+        num_commands = len(commands)
+        next_steps = set()
+        for cmds in chain(product(zzz, zzz, zzz),
+                          product(zzz, zzz), 
+                          zzz):
+            for cmd in cmds:
+                commands.append(cmd)
+            
+            new_state, e = apply_commands(state, cmds)
             if e is None:
-                rec(new_state, depth-1)
+                h = hash(new_state.freeze())
+                if h not in next_steps:
+                    next_steps.add(h)
+                    rec(new_state, depth-1)
             else:
                 check(e)
-            commands.pop()
+                
+            for _ in cmds:
+                commands.pop()
+        assert num_commands == len(commands)
         
     num_states = 0
         
-    for depth in range(1, 100, 3):
+    for depth in range(1, 50, 1):
         if clock() - start > TIME_LIMIT:
             break
         print 'depth', depth
         visited.clear() # because values for smaller depths are invalid
+        assert commands == []
         rec(state, depth)
         print len(visited), 'states visited'
         num_states += len(visited)
