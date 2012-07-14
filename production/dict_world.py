@@ -19,12 +19,12 @@ class DictWorld(WorldBase):
         'width',
         'height',
         'data',
-        'initial_lambdas',
+        'total_lambdas',
         'commands',# list of commands executed so far
-        'robot',   # (x, y); zero based, because!
-        'lift',    # (x, y)
+        'robot_coords',   # (x, y); zero based, because!
+        'lift_coords',    # (x, y)
         'aborted', # whether robot executed Abort
-        'lifted',  # whether robot has entered lambda lift 
+        'lifted',  # whether robot has entered lambda lift_coords 
         'dead',    # whether robot was killed by rock
         'water',
         'flooding',
@@ -37,9 +37,9 @@ class DictWorld(WorldBase):
         self.height = 0
         self.width = 0
         self.commands = []
-        self.robot = None
-        self.lift = None
-        self.initial_lambdas = 0
+        self.robot_coords = None
+        self.lift_coords = None
+        self.total_lambdas = 0
         self.aborted = False
         self.lifted = False
         self.dead = False
@@ -83,13 +83,13 @@ class DictWorld(WorldBase):
                 assert c in 'R#*\\.LO ', c
                 w.data[j, i] = c
                 if c == 'R':
-                    assert w.robot is None
-                    w.robot = j, i
+                    assert w.robot_coords is None
+                    w.robot_coords = j, i
                 elif c == '\\':
-                    w.initial_lambdas += 1
+                    w.total_lambdas += 1
                 elif c in 'LO':
-                    assert w.lift == None
-                    w.lift = j, i
+                    assert w.lift_coords == None
+                    w.lift_coords = j, i
             for j in range(len(line), w.width):
                 w.data[j, i] = ' '
                 
@@ -115,7 +115,7 @@ class DictWorld(WorldBase):
     
     def show(self):
         print self.get_map_string()
-        print 'robot at {}; current score is {}'.format(self.robot, self.get_score_abort())
+        print 'robot_coords at {}; current score is {}'.format(self.robot_coords, self.get_score_abort())
         
     def execute_command_inplace(self, c):
         assert c != 'A', 'according to webvalidator behavior, abort is not command'
@@ -148,10 +148,10 @@ class DictWorld(WorldBase):
     def freeze(self):
         '''return immutable (hashable) state'''
         data = frozenset(self.data.items())
-        return (data, self.time(), self.aborted, self.lifted, self.dead)
+        return (data, self.time, self.aborted, self.lifted, self.dead)
         
     def move(self, dx, dy):
-        ''' move robot only 
+        ''' move robot_coords only 
         
         Without map update step. 
         Return whether move was sucessfull.
@@ -159,23 +159,23 @@ class DictWorld(WorldBase):
         
         assert dx*dx+dy*dy == 1
         
-        x, y = self.robot
+        x, y = self.robot_coords
         new_cell = self.data.get((x+dx, y+dy), '#')
         if new_cell in ' .\\O':
             if new_cell == 'O':
                 self.lifted = True
-            self.data[self.robot] = ' '
-            self.robot = x+dx, y+dy
+            self.data[self.robot_coords] = ' '
+            self.robot_coords = x+dx, y+dy
             if new_cell != 'O':
-                self.data[self.robot] = 'R'
+                self.data[self.robot_coords] = 'R'
             return True
         
         if dy == 0 and new_cell == '*':
             behind = (x+2*dx, y+2*dy)
             if self.data.get(behind) == ' ':
-                self.data[self.robot] = ' '
-                self.robot = x+dx, y+dy
-                self.data[self.robot] = 'R'
+                self.data[self.robot_coords] = ' '
+                self.robot_coords = x+dx, y+dy
+                self.data[self.robot_coords] = 'R'
                 self.data[behind] = '*'
                 return True
 
@@ -187,7 +187,7 @@ class DictWorld(WorldBase):
             # their web emulator does that!
             return
         
-        _, y = self.robot
+        _, y = self.robot_coords
         if y <= self.water_level():
             self.underwater += 1
         
@@ -195,7 +195,7 @@ class DictWorld(WorldBase):
         u = {}
         
         def fall(x, y):
-            if self.robot == (x, y-1):
+            if self.robot_coords == (x, y-1):
                 self.dead = True
         
         has_lambdas = '\\' in data.values() 
@@ -242,7 +242,7 @@ class DictWorld(WorldBase):
     
     @property
     def collected_lambdas(self):
-        return self.initial_lambdas-self.count_lambdas()
+        return self.total_lambdas-self.count_lambdas()
                 
     def ending(self):
         '''return either None or additional score'''

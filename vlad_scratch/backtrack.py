@@ -3,7 +3,10 @@
 
 from time import clock
 
-from game import Map, validate
+from dual_world import DualWorld
+from world import World
+from dict_world import DictWorld
+from localvalidator import validate
 from areas import filter_walls
 
 class C(object):
@@ -21,13 +24,13 @@ def upper_bound(state):
     max_dist = 0
     
     if state.data[state.lift] == 'O':
-        max_dist = dist(state.robot, state.lift)
+        max_dist = dist(state.robot_coords, state.lift_coords)
     else:
         for xy in state.enumerate_lambdas():
             max_dist = max(max_dist, 
-                           dist(state.robot, xy)+dist(xy, state.lift))
+                           dist(state.robot_coords, xy)+dist(xy, state.lift_coords))
             
-    return 75*state.initial_lambdas-state.time()-max_dist
+    return 75*state.total_lambdas-state.time-max_dist
 
 
 def solve(state):
@@ -49,7 +52,7 @@ def solve(state):
     visited = {}
     
     def rec(state, depth):
-        s = state.intermediate_score()
+        s = state.get_score_abort()
         
         if depth <= 0:
             check(s)
@@ -58,7 +61,7 @@ def solve(state):
         if upper_bound(state) <= best.score:
             return
 
-        frozen_state = state.freeze()
+        frozen_state = hash(state.freeze())
         old_score = visited.get(frozen_state)
         if old_score is not None and s <= old_score:
             return
@@ -69,7 +72,7 @@ def solve(state):
         
         for cmd in 'LRUDW':
             commands.append(cmd)
-            new_state, e = state.execute_command(cmd)
+            new_state, e = state.apply_command(cmd)
             if e is None:
                 rec(new_state, depth-1)
             else:
@@ -78,12 +81,14 @@ def solve(state):
         
     num_states = 0
         
-    for depth in range(1, 30):
+    for depth in range(1, 40, 3):
         print 'depth', depth
         visited.clear() # because values for smaller depths are invalid
         rec(state, depth)
         print len(visited), 'states visited'
         num_states += len(visited)
+        if clock() - start > 1:
+            print '({} states per second)'.format(num_states/(clock()-start+0.01))            
         
     print '{} states visited total, ({} states per second)'.format(num_states, num_states/(clock()-start+0.01))
     
@@ -91,10 +96,10 @@ def solve(state):
         
 
 if __name__ == '__main__':
-    map_name = 'contest2'
-    map = Map.load_file('../data/sample_maps/{}.map'.format(map_name))
-    map.data = filter_walls(map.data) # minimize structures for cloning etc.
-    print len(map.data), 'nonwall cells'
+    map_name = 'contest1'
+    map = World.from_file('../data/sample_maps/{}.map'.format(map_name))
+    #map.data = filter_walls(map.data) # minimize structures for cloning etc.
+    #print len(map.data), 'nonwall cells'
     
     map.show()
     
@@ -108,7 +113,7 @@ if __name__ == '__main__':
     print score, solution
     
     print 'validating...',
-    validated_score, _ = validate(map_name, solution)
+    validated_score, _ = validate(DualWorld, map_name, solution)
     assert score == validated_score, (score, validated_score)
     print 'ok'
     

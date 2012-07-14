@@ -4,7 +4,14 @@ class DualWorld(WorldBase):
     def __init__(self, w1, w2):
         self.w1 = w1
         self.w2 = w2
-        assert w1.get_map_string() == w2.get_map_string()
+        s1 = w1.get_map_string()
+        s2 = w2.get_map_string()
+        if s1 != s2:
+            print 'simulation diverged!!!!!'
+            print s1
+            print '---'
+            print s2
+            assert False
         
     @staticmethod
     def from_string(s):

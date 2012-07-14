@@ -119,7 +119,7 @@ class World(WorldBase):
             elif new_cell == 'O':
                 new_data[robot] = ' '
                 return new_world, new_world.get_score_win()
-            elif new_cell == '*' and data[new_robot + direction] == ' ':
+            elif new_cell == '*' and command in 'LR' and data[new_robot + direction] == ' ':
                 new_data[new_robot + direction] = '*'                
                 new_data[new_robot] = 'R'
                 new_data[robot] = ' '
@@ -168,6 +168,34 @@ class World(WorldBase):
                             continue
                         
         return new_world, None
+     
+    def freeze(self):
+        '''
+        For hashing
+        '''
+        return (tuple(self.data), self.time)
+   
+    def index_to_coords(self, index):
+        return index%self.width-1, index//self.width-1
+    
+    @property
+    def robot_coords(self):
+        return self.index_to_coords(self.robot)
+
+    @property
+    def lift_coords(self):
+        return self.index_to_coords(self.robot)
+    
+    def enumerate_lambdas(self):
+        start = 0
+        try:
+            while True:
+                i = self.data.index('\\', start)
+                yield self.index_to_coords(i)
+                start = i+1
+        except ValueError:
+            pass
+        
         
 if __name__ == '__main__':
     world = World.from_file('../data/sample_maps/contest1.map')
