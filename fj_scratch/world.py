@@ -42,8 +42,8 @@ class World(object):
         lines = src.split('\n')
         if lines[-1] == '': del lines[-1]
         
-        width = len(lines[0])
-        assert all(len(l) == width for l in lines)
+        width = max(imap(len, lines))
+        #assert all(len(l) == width for l in lines)
         width += 2
         
         # use plain list of interned strings (which would remain interned)
@@ -54,6 +54,7 @@ class World(object):
         for line in lines:
             data.append('#')
             data.extend(imap(intern, line))
+            data.extend([' ']*(width-2-len(line)))
             data.append('#')
         data.extend('#' for _ in xrange(width))
         
@@ -73,11 +74,16 @@ class World(object):
         with open(filename) as f:
             return cls.from_string(f.read())
     
-    def show(self):
+    def get_map_string(self):
+        lines = []
         height = len(self.data) / self.width
         for i in xrange(1, height - 1):
             offset = i * self.width
-            print ''.join(self.data[offset + 1 : offset + self.width - 1])
+            lines.append(''.join(self.data[offset + 1 : offset + self.width - 1]))
+        return '\n'.join(lines)
+    
+    def show(self):
+        print self.get_map_string()
             
     def get_score_lose(self):
         return self.collected_lambdas * 25 - self.time
@@ -99,7 +105,7 @@ class World(object):
         if command == 'A':
             return new_world, new_world.get_score_abort() 
         if command == 'W':
-            pass
+            new_robot = robot
         else:
             direction = [-self.width, self.width, -1, 1]['UDLR'.index(command)]
             new_robot = robot + direction
