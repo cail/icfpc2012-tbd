@@ -10,7 +10,7 @@ class WorldBase(object):
         return self.collected_lambdas * 25 - self.time
     
     def get_score_abort(self):
-        return self.collected_lambdas * 25 - self.time
+        return self.collected_lambdas * 50 - self.time
     
     def get_score_win(self):
         return self.collected_lambdas * 75 - self.time

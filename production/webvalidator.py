@@ -10,7 +10,7 @@ headers = {"Content-type": "application/x-www-form-urlencoded",
 
 def validate(map_name, route, delay_between_requests = 0):
     '''Validate route with official web validator.
-    Graceful imposes a minimum time between uses.
+    Nonzero delay_between_requests imposes a minimum time between uses.
     
     Return tuple (score, world).
     '''

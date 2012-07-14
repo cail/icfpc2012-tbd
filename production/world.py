@@ -24,12 +24,16 @@ class World(WorldBase):
         'width',    # including the extra borders 
         'total_lambdas',
         'lift',     # index in the 1d array
-        # stuff above could be shared.
+        'water',
+        'flooding',
+        'waterproof',
+        # stuff above could be shared between instances.
         'data',     # 1d array
         'robot',    # index in the 1d array
         'collected_lambdas',
         'time',
         'final_score', # non-None when the world is terminated
+        'underwater',
     ]
     
     def __init__(self, other = None):
@@ -37,14 +41,20 @@ class World(WorldBase):
             self.width = other.width
             self.total_lambdas = other.total_lambdas
             self.lift = other.lift
+            self.water = other.water
+            self.flooding = other.flooding
+            self.waterproof = other.waterproof
+        
             self.data = other.data[:]
             self.robot = other.robot
             self.collected_lambdas = other.collected_lambdas
             self.time = other.time
             self.final_score = other.final_score
+            self.underwater = other.underwater
 
     @classmethod
     def from_string(World, src):
+        src, _, metadata = src.partition('\n\n')
         try:
             assert all(c in 'R#.*\\LO \n' for c in src)
         except AssertionError:
@@ -79,6 +89,19 @@ class World(WorldBase):
         world.collected_lambdas = 0
         world.time = 0
         world.final_score = None
+        
+        if metadata:
+            metadict = dict(line.split(' ', 1) for line in metadata.split('\n') if line)
+            world.water = int(metadict['Water'])
+            world.flooding = int(metadict['Flooding'])
+            world.waterproof = int(metadict['Waterproof'])
+            world.underwater = 0
+        else:
+            world.water = 0
+            world.flooding = 0
+            world.waterproof = 10 # to be sure
+            world.underwater = 0
+        
         return world
     
     def get_map_string(self):
@@ -94,18 +117,27 @@ class World(WorldBase):
         
     def is_terminated(self):
         return self.final_score is not None
-            
+    
+    def water_level(self):
+        if self.flooding == 0:
+            return 0
+        return self.water + (self.time - 1) // self.flooding 
+
     def apply_command(self, command):
         new_world = World(self)
+        
+        # abort is not a command really
+        if command == 'A':
+            new_world.final_score = new_world.get_score_abort() 
+            return new_world, new_world.final_score
+        
         new_world.time += 1
         
         data = self.data
         new_data = new_world.data
         robot = self.robot
+        width = self.width
         
-        if command == 'A':
-            new_world.final_score = new_world.get_score_abort() 
-            return new_world, new_world.final_score
         if command == 'W':
             new_robot = robot
         else:
@@ -137,8 +169,15 @@ class World(WorldBase):
             data = new_data
             new_world.data = new_data = new_data[:]
             new_world.robot = new_robot
+            
+        if new_robot >= len(data) - width * (new_world.water_level() + 1):
+            new_world.underwater += 1
+            if new_world.underwater > new_world.waterproof:
+                new_world.final_score = new_world.get_score_lose() 
+                return new_world, new_world.final_score
+        else:
+            new_world.underwater = 0
         
-        width = self.width
         for i in xrange(1, len(data) / width - 1):
             offset = i * width
             for offset in xrange(offset + 1, offset + width - 1):
