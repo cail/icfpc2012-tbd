@@ -230,7 +230,10 @@ class DictWorld(WorldBase):
             if c == 'L' and not has_lambdas:
                 u[x, y] = 'O'
                     
-        data.update(**u)
+        #data.update(**u)
+        for k, v in u.items():
+            data[k] = v
+        # to please pypy
         
     def enumerate_lambdas(self):
         for k, v in self.data.items():

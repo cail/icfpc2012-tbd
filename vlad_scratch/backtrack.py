@@ -1,5 +1,5 @@
-#import sys
-#sys.path.append('../production') # for pypy
+import sys
+sys.path.append('../production') # for pypy
 
 from time import clock
 
