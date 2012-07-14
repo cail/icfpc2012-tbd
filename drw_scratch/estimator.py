@@ -96,7 +96,7 @@ class ScoreEstimator(object):
 		return (tour_length, tour)  
 		
 	
-	def debug_print(self):
+	def debug_print(self, extra_marks=[]):
 		inf = 10**6
 		x1, y1 = inf, inf
 		x2, y2 = -inf, -inf
@@ -106,20 +106,28 @@ class ScoreEstimator(object):
 			y1 = min(y1, y)
 			y2 = max(y2, y)
 
+		extra = {}
+		for points, symbol in extra_marks:
+			for point in points:
+				extra[point] = symbol
+			
+
 		lambda_symbols = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 		for y in xrange(y1, y2+1):
 			line = ''		
 			for x in xrange(x1, x2+1):
-				if (x, y) not in self.lambdas:
+				if (x, y) in extra:
+					line += extra[x, y]
+				elif (x, y) not in self.lambdas:
 					line += self.simple_map[x, y]
 				else:
 					line += lambda_symbols[self.lambdas.index((x,y))]
 			print line
 		print
-		for i in xrange(len(self.lambdas)):
-			for j in xrange(i+1, len(self.lambdas)):
-				print "%s to %s: %d" % (lambda_symbols[i], lambda_symbols[j], \
-									self.distances[self.lambdas[i]][self.lambdas[j]])
+		#for i in xrange(len(self.lambdas)):
+		#	for j in xrange(i+1, len(self.lambdas)):
+		#		print "%s to %s: %d" % (lambda_symbols[i], lambda_symbols[j], \
+		#							self.distances[self.lambdas[i]][self.lambdas[j]])
 		
 	
 def simplify(data):
@@ -166,5 +174,6 @@ if __name__ == '__main__':
 	#benchmark()
 	#test()
 	estimator = create_estimator('contest6')
-	print estimator.estimate(set(), (0,0), clever=False)
-	print estimator.estimate(set(), (0,0), clever=True)
+	#estimator.debug_print()
+	print estimator.estimate(set(), (1,1), clever=False)
+	print estimator.estimate(set(), (1,1), clever=True)
