@@ -24,6 +24,11 @@ def create_chaotic(height, width, properties):
                 else:
                     result += random.choice(Fields[2:-1])
         result += '\n'
+    if (('flooding' in properties and properties['flooding'] == True) 
+            or (random.random() > 0.5)):
+        result += '\nWaterproof %d\n' % random.randint(0, height)
+        result += 'Flooding %d\n' % random.randint(0, height)
+        result += 'Water %d\n' % random.randint(0, height)
     return result
 
 random_generator_table = {
