@@ -50,8 +50,7 @@ class ScoreEstimator(object):
 		distances_from_robot = self.distances_from_source(robot, \
 														list(lambdas_remaining) + [self.lift])
 		
-		tour_length = self.find_tour(lambdas_remaining, robot, distances_from_robot, clever)
-		
+		tour_length, tour = self.find_tour(lambdas_remaining, robot, distances_from_robot, clever)
 		return -tour_length + 75 * len(self.lambdas)
 	
 	def find_tour(self, lambdas_remaining, robot, distances_from_robot, clever):
@@ -68,6 +67,7 @@ class ScoreEstimator(object):
 		
 		tour_length = 0
 		
+		tour = [self.lift]
 		last_point = self.lift
 		while points_remaining:
 			weight = lambda point: self.distances[last_point][point]
@@ -75,8 +75,11 @@ class ScoreEstimator(object):
 			tour_length += distance_to_next
 			points_remaining.remove(next_point)
 			last_point = next_point
+			tour.append(last_point)
 		tour_length += distances_from_robot[last_point]
-		return tour_length
+		tour.append(robot)
+		tour.reverse()
+		return (tour_length, tour)
 	
 	def find_tour_clever(self, lambdas_remaining, robot, distances_from_robot):
 		weights = deepcopy(self.distances)
@@ -89,8 +92,8 @@ class ScoreEstimator(object):
 		point = tour[0]
 		for next_point in tour[1:]:
 			tour_length += weights[point][next_point]
-			next_point = point
-		return tour_length  
+			point = next_point
+		return (tour_length, tour)  
 		
 	
 	def debug_print(self):
@@ -162,6 +165,6 @@ def benchmark():
 if __name__ == '__main__':
 	#benchmark()
 	#test()
-	estimator = create_estimator('contest1')
+	estimator = create_estimator('contest6')
 	print estimator.estimate(set(), (0,0), clever=False)
 	print estimator.estimate(set(), (0,0), clever=True)
