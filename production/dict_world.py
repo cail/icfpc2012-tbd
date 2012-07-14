@@ -260,6 +260,9 @@ class DictWorld(WorldBase):
             return 50*self.collected_lambdas-self.time
         if self.dead:
             return 25*self.collected_lambdas-self.time
+        
+    def __getitem__(self, coords):
+        return self.data.get(coords, '#')
     
                 
 

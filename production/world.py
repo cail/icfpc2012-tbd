@@ -176,7 +176,16 @@ class World(WorldBase):
         return (tuple(self.data), self.time)
    
     def index_to_coords(self, index):
-        return index%self.width-1, index//self.width-1
+        return index%self.width-1, (len(self.data)-1-index)//self.width-1
+    
+    def __getitem__(self, (x, y)):
+        if x < 0 or x >= self.width-2:
+            return '#'
+        #i = x+1+(y+1)*self.width
+        i = len(self.data)-(y+2)*self.width+x+1
+        if i < 0 or i >= len(self.data):
+            return '#'
+        return self.data[i]
     
     @property
     def robot_coords(self):
@@ -184,7 +193,7 @@ class World(WorldBase):
 
     @property
     def lift_coords(self):
-        return self.index_to_coords(self.robot)
+        return self.index_to_coords(self.lift)
     
     def enumerate_lambdas(self):
         start = 0

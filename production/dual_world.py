@@ -40,3 +40,51 @@ class DualWorld(WorldBase):
     def show(self):
         print self.get_map_string()
         print '(simulated by both {} and {})'.format(type(self.w1), type(self.w2))
+        
+    ##### data access interface
+    
+    def freeze(self):
+        return (self.w1.freeze(), self.w2.freeze())
+
+    @property
+    def time(self):
+        result = self.w1.time
+        assert result == self.w2.time
+        return result
+    
+    @property
+    def total_lambdas(self):
+        result = self.w1.total_lambdas
+        assert result == self.w2.total_lambdas
+        return result
+    
+    @property
+    def collected_lambdas(self):
+        result = self.w1.collected_lambdas
+        assert result == self.w2.collected_lambdas
+        return result
+        
+    @property
+    def robot_coords(self):
+        result = self.w1.robot_coords
+        assert result == self.w2.robot_coords
+        return result
+    
+    @property
+    def lift_coords(self):
+        result = self.w1.lift_coords
+        assert result == self.w2.lift_coords
+        return result
+    
+    def __getitem__(self, coords):
+        result = self.w1[coords]
+        assert result == self.w2[coords]
+        return result
+    
+    def enumerate_lambdas(self):
+        result = set(self.w1.enumerate_lambdas())
+        assert result == set(self.w2.enumerate_lambdas())
+        return result
+    
+    
+    

@@ -23,7 +23,7 @@ def upper_bound(state):
     '''
     max_dist = 0
     
-    if state.data[state.lift] == 'O':
+    if state[state.lift_coords] == 'O':
         max_dist = dist(state.robot_coords, state.lift_coords)
     else:
         for xy in state.enumerate_lambdas():
@@ -97,7 +97,7 @@ def solve(state):
 
 if __name__ == '__main__':
     map_name = 'contest1'
-    map = World.from_file('../data/sample_maps/{}.map'.format(map_name))
+    map = DualWorld.from_file('../data/sample_maps/{}.map'.format(map_name))
     #map.data = filter_walls(map.data) # minimize structures for cloning etc.
     #print len(map.data), 'nonwall cells'
     
