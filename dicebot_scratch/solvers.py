@@ -2,9 +2,9 @@ import random
 import backtrack
 import world
 
-class strategy:
-    def __init__(self, name):
-        self.name = name
+class fuzz_solver:
+    def __init__(self):
+        self.name = 'fuzzy'
     
     def solve(self, src):
         actions = [ 'L', 'R', 'U', 'D', 'W' ]
@@ -31,6 +31,3 @@ class vlad_solver:
         return self.name
     
     pass
-
-def enumerate_all():
-    return [ strategy('fuzzy'), vlad_solver() ]

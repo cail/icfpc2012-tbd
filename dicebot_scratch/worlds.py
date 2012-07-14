@@ -3,7 +3,10 @@ from world_definitions import Fields, Robot, Lift
 import random
 import os
 
-random_counter = 0
+official_worlds_folder = '../data/sample_maps'
+our_custom_world_folder = '../data/maps_manual'
+
+print_generated_maps = False
 
 def create_chaotic(height, width, properties):
     result = ''
@@ -34,6 +37,8 @@ random_generator_table = {
     'chaotic' : create_chaotic, 
 }
 
+random_counter = 0 # utility, to differentiated generated maps by numbers
+
 def create_one_random(height, width, properties):       
     global random_counter
 
@@ -48,6 +53,12 @@ def create_one_random(height, width, properties):
     
     random_counter += 1
     world = generator(height, width, properties)
+    
+    if print_generated_maps:
+        print 'random.%s.%d' % (mode, random_counter)
+        print world
+        print '____'
+        
     return {
         'name' : 'random.%s.%d' % (mode, random_counter),
         'source' : world,
@@ -56,7 +67,10 @@ def create_one_random(height, width, properties):
     }
 
 def create_some_random(amount, height, width):
-    return [ create_one_random(height, width, {'mode' : 'chaotic'}) for _ in range(amount) ]
+    return [
+            create_one_random(height, width, {'mode' : 'chaotic'}) 
+            for _ in range(amount) 
+    ]
 
 def load_from_folder(path):
     files = os.listdir(path)
@@ -72,8 +86,6 @@ def load_from_folder(path):
         result['width'] = len(s[0])
     return results
 
-official_worlds_folder = '../data/sample_maps'
-our_custom_world_folder = '../data/maps_manual'
 
 def load_official_worlds():
     return load_from_folder(official_worlds_folder)

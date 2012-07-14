@@ -1,3 +1,28 @@
+'''
+Main tester script.
+Provide several functions to solve a list of maps on list of algorithms and
+    get some useful metrics to compare.
+
+Check __main__ for examples, including commented out
+
+All test runs provide results in following data-structure (json'ed output):
+{
+    "<map name>": {
+        "meta": {
+            "width": 0, 
+            "height": 0
+        }, 
+        "stats_per_solver": {
+            "<solver name>": {
+                "solution_length": 0, 
+                "score": null, 
+                "solution": "", 
+                "time": "0.000000"
+            }
+        }
+    }
+}
+'''
 import worlds
 import emulator
 import solvers
@@ -7,8 +32,23 @@ import time
 import json
 from itertools import chain
 
-default_interpreter = emulator.interpret_main
+# SETTINGS
 
+# For now one of three:
+#    emulator.interpret_main - latest one
+#    emulator.interpret_dict - original Vlad's one
+#    emulator.interpret - dual one
+default_interpreter = emulator.interpret
+
+# check solver.py for available ones
+solver_list = [ solvers.fuzz_solver(), solvers.vlad_solver() ]
+
+# used in random-based map generators 
+worlds.print_generated_maps = True
+
+# END OF SETTINGS
+
+# utility function to run any one test and store needed metrics
 def run_test(world_text, solver, interpretator):
     time1 = time.time()
     commands = solver.solve(world_text)
@@ -29,10 +69,11 @@ def test_world_list(worlds):
             'meta' : {
                 'width' : world['width'],
                 'height' : world['height'],
-                'source' : world['source']
+#                commented out until really required, to omuch garbage in stdout
+#                'source' : world['source']
             },
             'stats_per_solver' : { solver.name : 
-                run_test(world['source'], solver, default_interpreter) for solver in solvers.enumerate_all() 
+                run_test(world['source'], solver, default_interpreter) for solver in solver_list 
             }
         }
     return results

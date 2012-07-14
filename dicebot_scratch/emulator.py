@@ -2,28 +2,26 @@ import dual_world
 import dict_world
 import world 
 
+def interpret_impl(world_string, commands, instance):
+    for cmd in commands:
+        instance, score = instance.apply_command(cmd)
+        if score is not None:
+            break
+    if score is None:
+        return instance.get_score_abort()
+    else:
+        return score
+
 def interpret(world_string, commands):
     instance1 = dict_world.DictWorld.from_string(world_string)
     instance2 = world.World.from_string(world_string)
     instance_dual = dual_world.DualWorld(instance1, instance2)
-    for cmd in commands:
-        instance_dual, score = instance_dual.apply_command(cmd)
-        if score is not None:
-            break
-    return score
+    return interpret_impl(world_string, commands, instance_dual)
 
 def interpret_dict(world_string, commands):
-    instance = dict_world.DictWorld.from_string(world_string)
-    for cmd in commands:
-        instance, score = instance.apply_command(cmd)
-        if score is not None:
-            break
-    return score
+    return interpret_impl(world_string, commands,
+                          dict_world.DictWorld.from_string(world_string))
 
 def interpret_main(world_string, commands):
-    instance = world.World.from_string(world_string)
-    for cmd in commands:
-        instance, score = instance.apply_command(cmd)
-        if score is not None:
-            break
-    return score
+    return interpret_impl(world_string, commands,
+                      world.World.from_string(world_string))
