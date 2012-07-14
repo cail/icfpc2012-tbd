@@ -6,7 +6,6 @@ from itertools import *
 
 from dual_world import DualWorld
 from world import World
-from dict_world import DictWorld
 from localvalidator import validate
 
 from preprocessor import preprocess_world
@@ -69,14 +68,6 @@ def upper_bound(state):
 TIME_LIMIT = 15
 
 
-def apply_commands(world, cmds):
-    for cmd in cmds:
-        world, e = world.apply_command(cmd)
-        if e is not None:
-            break
-    return world, e
-    
-
 def solve(state):
     
     start = clock()
@@ -108,7 +99,6 @@ def solve(state):
 
         preprocessed = preprocess_world(state)
         
-        ub = upper_bound(preprocessed)
         if upper_bound(preprocessed) <= best.score:
             return
         
@@ -126,13 +116,15 @@ def solve(state):
         zzz = 'LRUDW'
         num_commands = len(commands)
         next_steps = set()
-        for cmds in chain(product(zzz, zzz, zzz),
-                          product(zzz, zzz), 
-                          zzz):
+        for cmds in product(zzz, zzz):
+            e = None
+            new_state = state
             for cmd in cmds:
+                if e is None:
+                    new_state, e = new_state.apply_command(cmd)
+                    # TODO: check()
                 commands.append(cmd)
             
-            new_state, e = apply_commands(state, cmds)
             if e is None:
                 h = hash(new_state.freeze())
                 if h not in next_steps:
@@ -146,8 +138,10 @@ def solve(state):
         assert num_commands == len(commands)
         
     num_states = 0
-        
-    for depth in range(1, 50, 1):
+    
+    max_depth = min(50, 100000000//len(state.data))
+    
+    for depth in range(1, 50):
         if clock() - start > TIME_LIMIT:
             break
         print 'depth', depth
@@ -165,7 +159,7 @@ def solve(state):
         
 
 if __name__ == '__main__':
-    map_name = 'contest9'
+    map_name = 'contest3'
     map = World.from_file('../data/sample_maps/{}.map'.format(map_name))
     #map.data = filter_walls(map.data) # minimize structures for cloning etc.
     #print len(map.data), 'nonwall cells'
