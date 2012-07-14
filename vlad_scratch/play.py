@@ -1,8 +1,8 @@
-from game import Map, play
+from game import DictWorld, play
 
     
 def main():
-    map = Map.load_file('../data/sample_maps/contest8.map')
+    map = DictWorld.load_file('../data/sample_maps/contest8.map')
     
     play(map)
     

@@ -1,7 +1,7 @@
 
 
 from webvalidator import validate
-from game import Map, play, validate as my_validate
+from game import DictWorld, play, validate as my_validate
 
     
 

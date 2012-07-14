@@ -1,7 +1,7 @@
-from game import Map, play
+from game import DictWorld, play
 
 def interpret(world, commands):
-    instance = Map.load_string(world)
+    instance = DictWorld.load_string(world)
     for cmd in commands:
         instance.execute_command(cmd)
         instance.update()

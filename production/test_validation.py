@@ -1,6 +1,7 @@
 from time import sleep
 
-from game import validate as local_validate
+from dict_world import DictWorld
+from localvalidator import validate as local_validate
 from webvalidator import validate
 
 
@@ -23,7 +24,7 @@ def main():
             sleep(1) # no need to sleep too much because we cache anyway
             
         print '{}% {}'.format(100*(i+1)//len(tests), test),
-        local = local_validate(*test)
+        local = local_validate(DictWorld, *test)
         web = validate(*test)
         if local == web:
             print 'ok (score {})'.format(local[0])

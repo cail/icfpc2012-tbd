@@ -1,22 +1,13 @@
 from copy import deepcopy
 
 
-class Map(object):
+class DictWorld(object):
     '''
-    >>> map = Map.load_file('../data/sample_maps/contest1.map')
+    >>> world = DictWorld.load_file('../data/sample_maps/contest1.map')
     >>> for c in 'LDRDDULULLDDL':
-    ...     assert map.ending() is None
-    ...     map.execute_command_inplace(c)
-    ...     map.update()
-    >>> map.ending()
-    212
-    
-    
-    Alternatively, in functional style:
-    >>> map = Map.load_file('../data/sample_maps/contest1.map')
-    >>> for c in 'LDRDDULULLDDL':
-    ...     map, e = map.execute_command(c)
-    >>> e
+    ...     world, final_score = world.apply_command(c)
+    ...     if final_score is not None: break
+    >>> final_score
     212
     '''
     
@@ -58,7 +49,7 @@ class Map(object):
 
     @staticmethod
     def load(lines):
-        map = Map()
+        w = DictWorld()
         #assert all(len(line) == len(lines[0]) for line in lines)
         
         if '' in lines:
@@ -67,34 +58,34 @@ class Map(object):
             for param in params:
                 name, value = param.split()
                 if name == 'Water':
-                    map.water = int(value)
+                    w.water = int(value)
                 elif name == 'Flooding':
-                    map.flooding = int(value)
+                    w.flooding = int(value)
                 elif name == 'Waterproof':
-                    map.waterproof = int(value)
+                    w.waterproof = int(value)
                 else:
                     assert False, param
                     
-        map.height = len(lines)
-        map.width = max(len(line) for line in lines)
+        w.height = len(lines)
+        w.width = max(len(line) for line in lines)
             
         for i, line in enumerate(lines):
-            i = map.height-1-i
+            i = w.height-1-i
             for j, c in enumerate(line):
                 assert c in 'R#*\\.LO ', c
-                map.data[j, i] = c
+                w.data[j, i] = c
                 if c == 'R':
-                    assert map.robot is None
-                    map.robot = j, i
+                    assert w.robot is None
+                    w.robot = j, i
                 elif c == '\\':
-                    map.initial_lambdas += 1
+                    w.initial_lambdas += 1
                 elif c in 'LO':
-                    assert map.lift == None
-                    map.lift = j, i
-            for j in range(len(line), map.width):
-                map.data[j, i] = ' '
+                    assert w.lift == None
+                    w.lift = j, i
+            for j in range(len(line), w.width):
+                w.data[j, i] = ' '
                 
-        return map
+        return w
     
     def time(self):
         return len(self.commands)
@@ -109,14 +100,14 @@ class Map(object):
     @staticmethod
     def load_string(string):
         lines = string.split('\n')
-        return Map.load(lines)
+        return DictWorld.load(lines)
         pass
 
     @staticmethod
     def load_file(file_name):
         with open(file_name) as fin:
             lines = [line.rstrip('\n') for line in fin]
-        return Map.load(lines)
+        return DictWorld.load(lines)
     
     def get_map_string(self):
         lines = []
@@ -148,7 +139,7 @@ class Map(object):
             raise 'unknown command'
         self.commands.append(c)
     
-    def execute_command(self, c):
+    def apply_command(self, c):
         '''
         return pair (new map, final score or None)
         '''
@@ -270,54 +261,7 @@ class Map(object):
             return 25*self.collected_lambdas()-self.time()
     
                 
-def play(map):
-    map.show()
-    while True:
-        print '>>>',
-        commands = raw_input()
-        for c in commands:
-            if c == 'A':
-                e = map.intermediate_score()
-                break
-            map.execute_command_inplace(c)
-            map.update()
-            map.show()
-            e = map.ending()
-            if e is not None:
-                break
-    map.show()
-    print 'Final score:', e
-            
-            
-
-def validate(map_name, route):
-    '''Validate with my emulator
-    
-    Follows webvalidator interface.
-    Return tuple (score, world).
-    '''
-    map = Map.load_file('../data/sample_maps/{}.map'.format(map_name))
-    
-    e = None
-    for c in route:
-        if c == 'A':
-            break
-        map.execute_command_inplace(c)
-        map.update()
-        e = map.ending()
-        if e is not None:
-            break
-    
-    if e is not None:
-        score = e
-    else:
-        score = map.intermediate_score()
-        assert score is not None
-        
-    return (score, map.get_map_string())
-
 
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
-    my = validate('contest1', 'RRR')
