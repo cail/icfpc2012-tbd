@@ -24,7 +24,11 @@ def play(world):
     
 if __name__ == '__main__':
     from dict_world import DictWorld
+    from world import World
+    from dual_world import DualWorld
     
-    world = DictWorld.from_file('../data/sample_maps/contest1.map')
+    map_name = '../data/sample_maps/contest1.map'
+    world = DualWorld(DictWorld.from_file(map_name),
+                      World.from_file(map_name))
     
     play(world)
