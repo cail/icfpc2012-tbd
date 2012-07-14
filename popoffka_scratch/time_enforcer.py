@@ -29,14 +29,19 @@ def run(what, infile, limit):
         print 'contents of stderr:'
         print stderr
         print '---'
-    for i, ch in enumerate(stdout):
+    for i, ch in enumerate(stdout.rstrip()):
         if ch not in 'ULDRAW':
             print 'warning:', i+1,'th character in stdout is not in ULDRAW'
     print 'contents of stdout:'
     print stdout
 
 def main(argv):
-    run(('python', './manager.py'), open('../data/sample_maps/contest1.map'), 10)
+    if len(argv) != 3:
+        print 'USAGE:'
+        print argv[0],'inputfilename timelimit'
+        sys.exit()
+
+    run(('python', './manager.py'), open(argv[1]), int(argv[2]))
 
 
 if __name__ == '__main__':
