@@ -10,7 +10,7 @@ def validate(simulator, map_name, route):
     
     route, _, _ = route.partition('A')
     
-    world = simulator.load_file('../data/sample_maps/{}.map'.format(map_name))
+    world = simulator.from_file('../data/sample_maps/{}.map'.format(map_name))
     
     e = None
     for c in route:

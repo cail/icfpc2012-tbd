@@ -3,7 +3,9 @@ from copy import deepcopy
 
 class DictWorld(object):
     '''
-    >>> world = DictWorld.load_file('../data/sample_maps/contest1.map')
+    >>> world = DictWorld.from_file('../data/sample_maps/contest1.map')
+    >>> world.intermediate_score()
+    0
     >>> for c in 'LDRDDULULLDDL':
     ...     world, final_score = world.apply_command(c)
     ...     if final_score is not None: break
@@ -48,7 +50,11 @@ class DictWorld(object):
         
 
     @staticmethod
-    def load(lines):
+    def from_string(src):
+        lines = src.split('\n')
+        if lines[-1] == '': 
+            del lines[-1]
+                
         w = DictWorld()
         #assert all(len(line) == len(lines[0]) for line in lines)
         
@@ -87,27 +93,21 @@ class DictWorld(object):
                 
         return w
     
+    @property
     def time(self):
         return len(self.commands)
     
     def water_level(self):
         if self.flooding == 0:
             return 0
-        return self.water+(self.time()-1)//self.flooding-1
+        return self.water+(self.time-1)//self.flooding-1
         # time-1 because we check it in update
         # -1 because our coords are zero-based
     
-    @staticmethod
-    def load_string(string):
-        lines = string.split('\n')
-        return DictWorld.load(lines)
-        pass
-
-    @staticmethod
-    def load_file(file_name):
-        with open(file_name) as fin:
-            lines = [line.rstrip('\n') for line in fin]
-        return DictWorld.load(lines)
+    @classmethod
+    def from_file(cls, filename):
+        with open(filename) as f:
+            return cls.from_string(f.read())
     
     def get_map_string(self):
         lines = []
@@ -133,8 +133,8 @@ class DictWorld(object):
             self.move(0, -1)
         elif c == 'W':
             pass
-        elif c == 'A':
-            self.aborted = True
+        #elif c == 'A':
+        #    self.aborted = True
         else:
             raise 'unknown command'
         self.commands.append(c)
@@ -248,7 +248,7 @@ class DictWorld(object):
         
     def intermediate_score(self):
         '''score assuming we abort in time'''
-        return 50*self.collected_lambdas()-self.time()
+        return 50*self.collected_lambdas()-self.time
         
     def ending(self):
         '''return either None or additional score'''
@@ -256,13 +256,13 @@ class DictWorld(object):
         # TODO: clarify in what order winning and drowning are tested
         
         if self.underwater > self.waterproof:
-            return 25*self.collected_lambdas()-self.time()
+            return 25*self.collected_lambdas()-self.time
         if self.lifted:
-            return 75*self.collected_lambdas()-self.time()
+            return 75*self.collected_lambdas()-self.time
         if self.aborted:
-            return 50*self.collected_lambdas()-self.time()
+            return 50*self.collected_lambdas()-self.time
         if self.dead:
-            return 25*self.collected_lambdas()-self.time()
+            return 25*self.collected_lambdas()-self.time
     
                 
 
