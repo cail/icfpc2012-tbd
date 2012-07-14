@@ -18,6 +18,9 @@ def main():
         ('contest2', 'RRUDRRULURULLLLDDDL'), # complete optimal solution
         ('contest3', 'LDDDRRRRDDLLLLLDRRURRURUR'), # complete optimal(?) solution
         
+        ('contest5', 'LLURURUUURRRRRUULLL'), # reasonably good solutions
+        ('contest6', 'RUULRRRRRRRRRRUUULLLLLLLDLLLUUUUUURULURR'),
+        
         ('contest8', 'WWWRRRLLLWWWA'), # abort or death?
 
         ('contest1', 'LW'), # there was a bug
