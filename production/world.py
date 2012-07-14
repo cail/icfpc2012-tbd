@@ -29,6 +29,7 @@ class World(WorldBase):
         'robot',    # index in the 1d array
         'collected_lambdas',
         'time',
+        'final_score', # non-None when the world is terminated
     ]
     
     def __init__(self, other = None):
@@ -40,6 +41,7 @@ class World(WorldBase):
             self.robot = other.robot
             self.collected_lambdas = other.collected_lambdas
             self.time = other.time
+            self.final_score = other.final_score
 
     @classmethod
     def from_string(World, src):
@@ -72,6 +74,7 @@ class World(WorldBase):
         world.robot = find_single_item(data, 'R')
         world.collected_lambdas = 0
         world.time = 0
+        world.final_score = None
         return world
     
     def get_map_string(self):
@@ -84,13 +87,10 @@ class World(WorldBase):
     
     def show(self):
         print self.get_map_string()
+        
+    def is_terminated(self):
+        return self.final_score is not None
             
-    def get_score_lose(self):
-        return self.collected_lambdas * 25 - self.time
-    
-    def get_score_win(self):
-        return self.collected_lambdas * 75 - self.time
-
     def apply_command(self, command):
         new_world = World(self)
         new_world.time += 1
@@ -100,7 +100,8 @@ class World(WorldBase):
         robot = self.robot
         
         if command == 'A':
-            return new_world, new_world.get_score_abort() 
+            new_world.final_score = new_world.get_score_abort() 
+            return new_world, new_world.final_score
         if command == 'W':
             new_robot = robot
         else:
@@ -118,7 +119,8 @@ class World(WorldBase):
                     new_data[self.lift] = 'O'
             elif new_cell == 'O':
                 new_data[robot] = ' '
-                return new_world, new_world.get_score_win()
+                new_world.final_score = new_world.get_score_win() 
+                return new_world, new_world.final_score 
             elif new_cell == '*' and command in 'LR' and data[new_robot + direction] == ' ':
                 new_data[new_robot + direction] = '*'                
                 new_data[new_robot] = 'R'
@@ -144,27 +146,31 @@ class World(WorldBase):
                         new_data[offset] = ' '
                         new_data[offset_below] = '*'
                         if offset_below + width == new_robot:
-                            return new_world, new_world.get_score_lose()
+                            new_world.final_score = new_world.get_score_lose() 
+                            return new_world, new_world.final_score
                         continue
                     if cell_below == '*':
                         if data[offset + 1] == ' ' and data[offset_below + 1] == ' ':
                             new_data[offset] = ' '
                             new_data[offset_below + 1] = '*'
                             if offset_below + width + 1 == new_robot:
-                                return new_world, new_world.get_score_lose()
+                                new_world.final_score = new_world.get_score_lose() 
+                                return new_world, new_world.final_score
                             continue
                         if data[offset - 1] == ' ' and data[offset_below - 1] == ' ':
                             new_data[offset] = ' '
                             new_data[offset_below - 1] = '*'
                             if offset_below + width - 1 == new_robot:
-                                return new_world, new_world.get_score_lose()
+                                new_world.final_score = new_world.get_score_lose() 
+                                return new_world, new_world.final_score
                             continue
                     if cell_below == '\\':
                         if data[offset + 1] == ' ' and data[offset_below + 1] == ' ':
                             new_data[offset] = ' '
                             new_data[offset_below + 1] = '*'
                             if offset_below + width + 1 == new_robot:
-                                return new_world, new_world.get_score_lose()
+                                new_world.final_score = new_world.get_score_lose() 
+                                return new_world, new_world.final_score
                             continue
                         
         return new_world, None
@@ -207,12 +213,5 @@ class World(WorldBase):
         
         
 if __name__ == '__main__':
-    world = World.from_file('../data/sample_maps/contest1.map')
-    world.show()
-#    for c in 'LDRDDULULLDDL':
-#        print c
-#        world, final_score = world.apply_command(c)
-#        world.show()
-#        print final_score
     import doctest
-    doctest.testmod()
+    doctest.testmod(report=True)
