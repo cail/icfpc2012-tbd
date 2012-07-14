@@ -119,7 +119,7 @@ class World(WorldBase):
             elif new_cell == 'O':
                 new_data[robot] = ' '
                 return new_world, new_world.get_score_win()
-            elif new_cell == '*' and data[new_robot + direction] == ' ':
+            elif new_cell == '*' and command in 'LR' and data[new_robot + direction] == ' ':
                 new_data[new_robot + direction] = '*'                
                 new_data[new_robot] = 'R'
                 new_data[robot] = ' '
