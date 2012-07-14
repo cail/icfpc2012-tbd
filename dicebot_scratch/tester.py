@@ -28,7 +28,8 @@ def test_world_list(worlds):
         results[world['name']] = {
             'meta' : {
                 'width' : world['width'],
-                'height' : world['height']
+                'height' : world['height'],
+                'source' : world['source']
             },
             'stats_per_solver' : { solver.name : 
                 run_test(world['source'], solver, default_interpreter) for solver in solvers.enumerate_all() 
