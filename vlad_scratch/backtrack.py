@@ -29,7 +29,7 @@ def aggressive_preprocess(world):
     num_lambdas = 0
     for i in range(len(data)):
         xy = world.index_to_coords(i)
-        if dist(rxy, xy) > 8:
+        if dist(rxy, xy) > 7:
             if data[i] == '\\':
                 num_lambdas += 1
             data[i] = '!'
@@ -62,10 +62,14 @@ def upper_bound(state):
             max_dist = max(max_dist, 
                            dist(state.robot_coords, xy))
                     
-        return 50*collectable_lambdas-state.time#-max_dist
+        return 50*collectable_lambdas-state.time-max_dist
+
+
+TIME_LIMIT = 15
 
 
 def solve(state):
+    
     start = clock()
     
     best = C()
@@ -84,8 +88,10 @@ def solve(state):
     visited = {}
     
     def rec(state, depth):
-        s = state.get_score_abort()
+        if clock() - start > TIME_LIMIT:
+            return
         
+        s = state.get_score_abort()
         
         if depth <= 0:
             check(s)
@@ -119,7 +125,9 @@ def solve(state):
         
     num_states = 0
         
-    for depth in range(1, 150, 3):
+    for depth in range(1, 100, 3):
+        if clock() - start > TIME_LIMIT:
+            break
         print 'depth', depth
         visited.clear() # because values for smaller depths are invalid
         rec(state, depth)
