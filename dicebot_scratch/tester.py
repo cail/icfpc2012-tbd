@@ -36,11 +36,14 @@ def test_world_list(worlds):
         }
     return results
 
-def test_fuzzy(count, min_width = 5, max_width = 1000, min_height = 5, max_height = 1000):
+def test_fuzzy(count, min_width = 5, max_width = 1000, min_height = 5, max_height = 1000, with_water = False):
+    properties = {'mode' : 'chaotic'}
+    if with_water:
+        properties['flooding'] = 1 # portions of maps with water
     return test_world_list([ 
         worlds.create_one_random(random.randint(min_height, max_height),
                                  random.randint(min_width, max_width),
-                                 {'mode' : 'chaotic'}
+                                 properties
                                 )
         for _ in range(count) 
     ])
@@ -60,6 +63,8 @@ def test_all():
     
 if __name__ == '__main__':
     random.seed(42)
-    #stats = test_fuzzy(2, max_width = 20, max_height = 30)
-    stats = test_basic_official()
+    #stats = test_fuzzy(2, max_width = 20, max_height = 30, with_water = True)
+    stats = test_fuzzy(1, max_width = 5, max_height = 5, with_water = False)
+    #stats = test_all_official()
+    #stats = test_basic_official()
     print json.dumps(stats, indent=4, sort_keys = False)
