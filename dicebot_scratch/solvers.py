@@ -7,7 +7,7 @@ class strategy:
     def solve(self, world):
         actions = [ 'L', 'R', 'U', 'D', 'W' ]
         solution = ''        
-        for _ in random.randint(len(world)):
+        for _ in range(random.randint(1, len(world))):
             solution += random.choice(actions)
         return solution
         
