@@ -90,6 +90,7 @@ class VorberWorld(WorldBase):
         self.Waterproof = int(metadict.get("Waterproof", 0))
         self.Growth = int(metadict.get("Growth", 25))
         self.Razors = int(metadict.get("Razors", 0))
+        self.trampolines = dict(line[11:].split(" targets ") for line in metadata.split('\n') if line.startswith("Trampoline"))
 
     def __repr__(self):
         res = "VorberWorld\n"
@@ -131,9 +132,14 @@ class VorberWorld(WorldBase):
         self.world[y*self.width + x] = value
         self.new_world[y*self.width + x] = value
 
-    def grow_beard(self, x, y):
-        if self.check_range(x,y) and self.get(x,y) == VorberWorld.Empty:
-            self.set(x,y,VorberWorld.Beard)
+    def grow_beard(self, x, y, value=Beard):
+        if self.check_range(x,y):
+            if value == VorberWorld.Beard:
+                if self.get(x,y) == VorberWorld.Empty:
+                    self.set(x,y,VorberWorld.Beard)
+            elif value == VorberWorld.Empty:
+                if self.get(x,y) == VorberWorld.Beard:
+                    self.set(x,y, VorberWorld.Empty)
         else:
             print x, y, "onoes", self.get(x,y)
 
@@ -212,13 +218,23 @@ class VorberWorld(WorldBase):
         if move == 'A':
             self.time -= 1
             self.aborted = True
+        if move == 'S':
+            self.grow_beard(old_x-1, old_y-1, VorberWorld.Empty)
+            self.grow_beard(old_x-1, old_y, VorberWorld.Empty)
+            self.grow_beard(old_x-1, old_y+1, VorberWorld.Empty)
+            self.grow_beard(old_x, old_y-1, VorberWorld.Empty)
+            self.grow_beard(old_x, old_y, VorberWorld.Empty)
+            self.grow_beard(old_x, old_y+1, VorberWorld.Empty)
+            self.grow_beard(old_x+1, old_y-1, VorberWorld.Empty)
+            self.grow_beard(old_x+1, old_y, VorberWorld.Empty)
+            self.grow_beard(old_x+1, old_y+1, VorberWorld.Empty)
         if move == 'W':
             pass
 
         if abs(old_x - new_x) + abs(old_y - new_y) == 1:
 
             tv = self.get(new_x, new_y)
-            if tv in [VorberWorld.Empty, VorberWorld.Earth, VorberWorld.Lambda, VorberWorld.Open, VorberWorld.Closed] or (tv == VorberWorld.Beard and self.Razors > 0):
+            if tv in [VorberWorld.Empty, VorberWorld.Earth, VorberWorld.Lambda, VorberWorld.Open, VorberWorld.Closed]:
                 if tv == VorberWorld.Lambda:
                     self.lambda_count -= 1
                     self.collected_lambdas+= 1
@@ -228,13 +244,24 @@ class VorberWorld(WorldBase):
                     self.robot_y = new_y
                     self.set_in_world(old_x, old_y, VorberWorld.Empty)
                     return
-                if tv == VorberWorld.Beard:
-                    self.Razors -= 1
 
                 self.robot_x = new_x
                 self.robot_y = new_y
                 self.set_in_world(new_x, new_y, VorberWorld.Robot)
                 self.set_in_world(old_x, old_y, VorberWorld.Empty)
+            if tv in VorberWorld.Trampoline:
+                dest = self.trampolines[tv]
+                print "dest: ", dest
+                idx = self.new_world.index(dest)
+                self.new_world[idx] = VorberWorld.Robot
+                self.robot_x = idx % self.width
+                self.robot_y = idx / self.width
+                self.set_in_world(old_x, old_y, VorberWorld.Empty)
+                for t in self.trampolines.keys():
+                    if self.trampolines[t] == dest:
+                        self.trampolines.pop(t)
+                        self.new_world[self.world.index(t)] = VorberWorld.Empty
+
             if tv == VorberWorld.Rock and old_x + 1 == new_x and old_y == new_y and self.check_range(old_x+2, old_y) and self.get(old_x+2, old_y) == VorberWorld.Empty:
                 self.robot_x = new_x
                 self.robot_y = new_y
@@ -273,7 +300,7 @@ class VorberWorld(WorldBase):
         return self.score
 
 if __name__ == "__main__":
-    mmap = VorberWorld.from_file("../vorber_scratch/beard.map")
+    mmap = VorberWorld.from_file("../vorber_scratch/tramp.map")
     route = "WWWWWWWWWWWWWWWWWWWLLLUUUUUULLLLLLLLLRRRRRRRRRRRR"
     interactive = True
     if interactive:
