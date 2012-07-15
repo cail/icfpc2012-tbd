@@ -171,7 +171,7 @@ class World(WorldBase):
                 new_data[new_robot] = 'R'
                 new_data[robot] = ' '
             else:
-                warnings.warn('Action failed!')
+#                warnings.warn('Action failed!')
                 new_robot = robot
         if new_robot != robot:
             # another copy :( at least it's temporary

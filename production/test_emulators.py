@@ -1,5 +1,6 @@
 from collections import defaultdict
 import webvalidator
+import re
 
 tests = [
     ('contest1', 'LDRDDULULLDD'), # almost complete solution
@@ -25,8 +26,6 @@ tests = [
     ]
 
 
-
-    
 class WebValidatorProxy(object):
     def __init__(self, map_name, commands):
         self.score, self.map_string = webvalidator.validate(map_name, commands, 10.0)
@@ -38,6 +37,8 @@ def validate(map_name, commands, *world_classes):
     
     Return True if no deviations were found.
     '''
+    can_has_webvalidator = re.match(r'^(contest|flood|trampoline)\d+$', map_name) is not None
+    
     def format_world_state(world):
         return '{}\nScore:{!r}'.format(world.get_map_string(), world.score)
     
@@ -46,7 +47,7 @@ def validate(map_name, commands, *world_classes):
         for world in worlds:
             result_dict[format_world_state(world)].append(world.__class__.__name__)
             
-        if always_webvalidate or len(result_dict) > 1:
+        if can_has_webvalidator and (always_webvalidate or len(result_dict) > 1):
             web_world = WebValidatorProxy(map_name, commands)
             result_dict[format_world_state(web_world)].insert(0, '*Web validator*')
             
@@ -87,17 +88,17 @@ def validate(map_name, commands, *world_classes):
             return False
         if terminated:
             break
-    # check last state against the web-validator
-    return check_worlds(worlds, commands, None, True)    
+    # check last state against the web-validator if possible
+    if not can_has_webvalidator: 
+        return True
+    return check_worlds(worlds, commands, None, True)
 
-def run_all_tests():
-    from world import World
-    from dict_world import DictWorld
+def run_all_tests(*world_classes):
     total_tests = len(tests) 
     failed_tests = 0
     for i, (map_name, commands) in enumerate(tests):
         print '{}/{} {} {}'.format(i + 1, total_tests, map_name, commands)
-        if not validate(map_name, commands, World, DictWorld):
+        if not validate(map_name, commands, *world_classes):
             failed_tests += 1
             break;
     if not failed_tests:
@@ -108,4 +109,7 @@ def run_all_tests():
 
                        
 if __name__ == '__main__':
-    run_all_tests()
+    from world import World
+    from dict_world import DictWorld
+    from dual_world import DualWorld
+    run_all_tests(World, DictWorld, DualWorld)
