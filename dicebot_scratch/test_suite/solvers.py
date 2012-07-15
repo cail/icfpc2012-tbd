@@ -45,14 +45,14 @@ class predefined_solver:
     def __init__(self):
         self.name = 'manual'
         self.solution_srcs = open('../../data/maps_manual/scores', "r").read()
-        lines = self.solution_srcs.split()
+        lines = self.solution_srcs.split('\n')
         self.solutions = { }
         current_map = 'null'
         for line in lines:
             if line == '':
                 current_map = 'null'            
             elif line.startswith('Path: '):
-                self.solutions[current_map] = re.search("Path: (.*)", line).group(0)
+                self.solutions[current_map] = re.search("Path: (.*)", line).group(1)
             elif not line.startswith('Score'):                
                 current_map = line
     

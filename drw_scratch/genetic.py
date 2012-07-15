@@ -120,7 +120,8 @@ class GeneticSolver(object):
                 if world.terminated:
                     return ''.join(compiled)
             path = pathfinder.plot_path(world, destination)
-            assert(path != None)
+            if path == None:
+                return 'A'
             commands = pathfinder.path_to_commands(path)
             for c in commands:
                 compiled.append(c)

@@ -30,6 +30,8 @@ import solvers
 import random
 import time
 from itertools import chain
+from worlds import load_official_basic_worlds,\
+    load_official_flood_worlds, load_our_worlds
 
 # SETTINGS
 
@@ -137,12 +139,16 @@ if __name__ == '__main__':
     import sys
     seed = random.randint(0, sys.maxint)
     print 'Using seed', seed 
-    random.seed(seed)    
-    stats = chain( 
-        test_fuzzy(2, max_width = 20, max_height = 30, with_water = True).items(),
-        test_basic_official(),
-        test_flood_official(),
-        test_our_worlds()
-    )
-    print_as_table(stats)
-    #print json.dumps(stats, indent=4, sort_keys = False)
+    random.seed(seed)
+    random_stats = test_fuzzy(4, max_width = 20, max_height = 30, with_water = True)
+    predef_stats = test_world_list(chain(
+        load_official_basic_worlds(),
+        load_official_flood_worlds(),
+        load_our_worlds()
+    )) 
+
+    print_as_table(random_stats.items())
+    print_as_table(predef_stats.items())
+    #import json
+    #print json.dumps(random_stats, indent=4, sort_keys = False)
+    #print json.dumps(predef_stats, indent=4, sort_keys = False)
