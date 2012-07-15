@@ -63,7 +63,7 @@ def run_test(world, solver, interpretator):
         print '_____'
         print world['source']
         print '-----'
-        raise            
+        score = None
     
     return { 
             'score' : score,
@@ -149,7 +149,10 @@ if __name__ == '__main__':
     )) 
 
     print_as_table(random_stats.items())
-    print_as_table(predef_stats.items())
+    print_as_table(predef_stats.items())    
+
+    # uncomment to print detailed data including solutions
+    
     #import json
     #print json.dumps(random_stats, indent=4, sort_keys = False)
     #print json.dumps(predef_stats, indent=4, sort_keys = False)
