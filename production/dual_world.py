@@ -17,7 +17,8 @@ class DualWorld(WorldBase):
             print '---'
             print s2
             print '---'
-            assert False
+            #assert False
+            self.w1 = self.w2 = w1
         
     @staticmethod
     def from_string(s):
