@@ -270,7 +270,7 @@ class VorberWorld(WorldBase):
         if abs(old_x - new_x) + abs(old_y - new_y) == 1:
 
             tv = self.get(new_x, new_y)
-            if tv in [VorberWorld.Empty, VorberWorld.Earth, VorberWorld.Lambda, VorberWorld.Open, VorberWorld.Closed, VorberWorld.Razor]:
+            if tv in [VorberWorld.Empty, VorberWorld.Earth, VorberWorld.Lambda, VorberWorld.Open, VorberWorld.Razor]:
                 if tv == VorberWorld.Lambda:
                     self.collected_lambdas+= 1
                 if tv == VorberWorld.Open:
