@@ -19,6 +19,10 @@ tests = [
     ('flood1', 'LLLLDDDDDWWWWUUUWWWWWW'), # surface barely in time
     ('flood1', 'LLLLDDDDDWWWWWWWWWWWW'), # drowning
     ('flood1', 'W'*100), # passive drowning
+
+    ('flood1', 'WWWWWWWWLLLLWWWDDDWDWWWWU'), # jump out of water the same turn water rises on the last turn of waterproof
+
+    ('flood1', 'LLLLDWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWUWWW'), # goes really wrong if you forget to reset underwater timer when getting out 
     
     
     
@@ -134,4 +138,5 @@ if __name__ == '__main__':
     from world import World
     from dict_world import DictWorld
     from dual_world import DualWorld
-    run_all_tests(World, DictWorld, DualWorld)
+    from vorber_world import VorberWorld
+    run_all_tests(World, DictWorld, DualWorld, VorberWorld)
