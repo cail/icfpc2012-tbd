@@ -2,6 +2,7 @@ import warnings
 from itertools import imap
 
 from world_base import WorldBase
+import pprint
 
 
 def find_single_item(data, value):
@@ -176,7 +177,17 @@ class World(WorldBase):
         return (tuple(self.data), self.time)
    
     def index_to_coords(self, index):
-        return index%self.width-1, (len(self.data)-1-index)//self.width-1
+        return index % self.width-1, (len(self.data)-index-1)//self.width-1
+    
+    def coords_to_index(self, (x,reverse_y)):
+        #pprint.pprint(x)
+        #pprint.pprint(reverse_y)
+        h=(( len(self.data) / self.width ))
+        y=h-reverse_y
+        pprint.pprint(y*self.width)
+        #pprint.pprint(y)
+        #pprint.pprint(y*self.width)
+        return ( (( len(self.data) / self.width ) - reverse_y) * self.width ) + x
     
     def __getitem__(self, (x, y)):
         if x < 0 or x >= self.width-2:
@@ -194,6 +205,9 @@ class World(WorldBase):
     @property
     def lift_coords(self):
         return self.index_to_coords(self.lift)
+    
+    def enumerate_lambdas_index(self):
+        return [i for i,x in enumerate(self.data) if x == '\\']
     
     def enumerate_lambdas(self):
         start = 0
