@@ -1,5 +1,11 @@
 import itertools
 
+def commands_to_reach(world, destination):
+    path = plot_path(world, destination)
+    if path is None:
+        return None
+    return path_to_commands(path)
+
 def plot_path(world, destination):
     ''' Find a path to destination in world.
         Walls and boulders are impassable. '''

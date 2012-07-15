@@ -100,19 +100,15 @@ class GeneticSolver(object):
                 world = world.apply_command('W')
                 if world.terminated:
                     return world.score
-            path = pathfinder.plot_path(world, destination)
-            if path == None:
-                return 0
-            commands = pathfinder.path_to_commands(path)
+            commands = pathfinder.commands_to_reach(world, destination)
+            if commands == None:
+                return world.score
             for c in commands:
                 world = world.apply_command(c)
                 if world.terminated:
                     return world.score
         return world.score
     
-    # copy-paste of the above because it's 5:20 am and people need this
-    # the difference is that fitness avoids plotting junk actions
-    # there's actually a lot of junk DNA so this is important
     def compile(self, candidate):
         world = World(self.world)
         source = world.robot
@@ -123,10 +119,10 @@ class GeneticSolver(object):
                 world = world.apply_command('W')
                 if world.terminated:
                     return ''.join(compiled)
-            path = pathfinder.plot_path(world, destination)
-            if path == None:
-                return 'A'
-            commands = pathfinder.path_to_commands(path)
+            commands = pathfinder.commands_to_reach(world, destination)
+            if commands == None:
+                compiled.append('A')
+                return ''.join(compiled)
             for c in commands:
                 compiled.append(c)
                 world = world.apply_command(c)
@@ -144,7 +140,6 @@ class GeneticSolver(object):
         return (scores, candidates)
     
     def step(self, population):
-        
         scores, candidates = self.evaluate_and_sort(population)
         print 'Fitness: max %d, average %d' % (scores[0], sum(scores)/float(len(scores)))
         
@@ -162,7 +157,7 @@ class GeneticSolver(object):
             if random.random() < CROSSOVER_RATE:
                 child = crossover(parent1, parent2)
             else:
-                child = random.choice([parent1, parent2]).copy()
+                child = parent1.copy()
             
             for i in xrange(MUTATION_ATTEMPTS):
                 if random.random() < MUTATION_RATE:
