@@ -58,14 +58,6 @@ def crossover(candidate1, candidate2):
         if len(offspring.actions) > 0:
             return offspring    
 
-def apply_commands(world, commands):
-    assert(not world.terminated)
-    for c in commands:
-        world = world.apply_command(c)
-        if world.terminated:
-            break
-    return world
-
 class WeightedRandomGenerator(object):
     def __init__(self, elements, weights):
         self.elements = elements 
@@ -141,7 +133,7 @@ class GeneticSolver(object):
         world_hash = world.get_hash()
         for (wait, destination) in itertools.izip(candidate.waits, candidate.actions):
             if wait > 0:
-                world = apply_commands(world, ('W' for _ in xrange(wait)))
+                world = world.apply_commands('W' for _ in xrange(wait))
                 if world.terminated:
                     break
                 world_hash = world.get_hash()
@@ -149,10 +141,10 @@ class GeneticSolver(object):
             cached = (cache_key in self.cache)
             if cached:
                 commands, world_hash = self.cache[cache_key]
-                world = apply_commands(world, commands)
+                world = world.apply_commands(commands)
             else:
                 commands = pathfinder.commands_to_reach(world, destination)
-                world = apply_commands(world, commands)
+                world = world.apply_commands(commands)
                 world_hash = world.get_hash()
                 self.cache[cache_key] = (commands, world_hash)
             if world.terminated:
