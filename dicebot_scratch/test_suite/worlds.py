@@ -31,6 +31,8 @@ def create_chaotic(height, width, properties):
         result += '\nWaterproof %d\n' % random.randint(0, height)
         result += 'Flooding %d\n' % random.randint(0, height)
         result += 'Water %d\n' % random.randint(0, height)
+    assert has_robot
+    assert has_lift
     return result
 
 random_generator_table = {

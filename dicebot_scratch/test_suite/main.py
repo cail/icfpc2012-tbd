@@ -140,6 +140,7 @@ if __name__ == '__main__':
     seed = random.randint(0, sys.maxint)
     print 'Using seed', seed 
     random.seed(seed)
+    
     random_stats = test_fuzzy(4, max_width = 20, max_height = 30, with_water = True)
     predef_stats = test_world_list(chain(
         load_official_basic_worlds(),

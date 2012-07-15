@@ -5,6 +5,8 @@ import backtrack
 import genetic
 import world
 
+time_limit = 15
+
 class fuzz_solver:
     def __init__(self):
         self.name = 'fuzzy'
@@ -24,7 +26,7 @@ class vlad_solver:
     
     def solve(self, src, filename):
         world_obj = world.World.from_string(src)
-        _, solution = backtrack.solve(world_obj)
+        _, solution = backtrack.solve(world_obj, time_limit)
         return solution
         
     pass
@@ -36,7 +38,7 @@ class drw_solver:
     def solve(self, src,  filename):
         world_obj = world.World.from_string(src)
         solver = genetic.GeneticSolver(world_obj)
-        solution = solver.solve(15)
+        solution = solver.solve(time_limit)
         return solution
 
     pass
