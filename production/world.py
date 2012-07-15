@@ -201,7 +201,7 @@ class World(WorldBase):
                             new_world.final_score = new_world.get_score_lose() 
                             return new_world
                         continue
-                    if cell_below == '*':
+                    if cell_below == '*' or cell_below == '^': # '^' is frozen stone (that is, 'slippery wall')
                         if data[offset + 1] == ' ' and data[offset_below + 1] == ' ':
                             new_data[offset] = ' '
                             new_data[offset_below + 1] = '*'
