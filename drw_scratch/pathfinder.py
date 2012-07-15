@@ -1,9 +1,31 @@
 import itertools
 
-def commands_to_reach(world, destination):
-    path = plot_path(world, destination)
-    commands = path_to_commands(path)
-    return commands
+def commands_to_reach(world, destination, simple=False):
+    if simple:
+        return simple_solution(world, destination)
+    else:
+        path = plot_path(world, destination)
+        commands = path_to_commands(path)
+        return commands
+
+def simple_solution(world, destination):
+    source_coords = world.robot_coords
+    destination_coords = world.index_to_coords(destination)
+    dx = destination_coords[0] - source_coords[0]
+    dy = destination_coords[1] - source_coords[1]
+    result = ''
+    # since we face the problem of flooding
+    # it might be beneficial to always do
+    # vertical movement first
+    if dy >= 0:
+        result += 'U' * dy
+    else:
+        result += 'D' * (-dy)
+    if dx >= 0:
+        result += 'R' * dx
+    else:
+        result += 'L' * (-dx)
+    return result
 
 def plot_path(world, destination):
     ''' Find a path to destination in world.
