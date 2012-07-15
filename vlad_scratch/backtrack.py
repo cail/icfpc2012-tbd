@@ -12,10 +12,6 @@ from preprocessor import preprocess_world
 from utils import path_to_nearest_lambda
 
 
-TIME_LIMIT = 15
-
-
-
 class C(object):
     pass
 
@@ -71,7 +67,7 @@ def upper_bound(state):
         return 50*collectable_lambdas-state.time-max_dist
     
 
-def solve(state):
+def solve(state, time_limit=15):
     
     start = clock()
     
@@ -91,7 +87,7 @@ def solve(state):
     visited = {}
     
     def rec(state, depth, stack_size):
-        if clock() - start > TIME_LIMIT:
+        if clock() - start > time_limit:
             return
         
         s = state.get_score_abort()
@@ -157,7 +153,7 @@ def solve(state):
     max_stack_size = min(100, 100000000//len(state.data))
     
     for depth in range(1, 50):
-        if clock() - start > TIME_LIMIT:
+        if clock() - start > time_limit:
             break
         print 'depth', depth
         visited.clear() # because values for smaller depths are invalid
