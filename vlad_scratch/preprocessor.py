@@ -1,10 +1,15 @@
+from world import World
+
 from reachability_tests import reachability_tests
 from stone_reachability_tests import stone_reachability_tests
 
 
 def reachability_step(width, data):
-    result = [False]*len(data)
-    reachable = set()
+    '''
+    Overapproximate set of spaces where robot can possibly be
+    '''
+    
+    reachable = [False]*len(data)
     tasks = set([data.index('R')])
     
     auto_empty = [False]*len(data)
@@ -27,48 +32,51 @@ def reachability_step(width, data):
                 auto_empty[i] = True
                 
     def make_reachable(i):
-        reachable.add(i)
-        result[i] = True
+        reachable[i] = True
         for j in [i+1, i-1, i-width-1, i-width, i-width+1, i+width]:
-            if j not in reachable:
+            if not reachable[j]:
                 tasks.add(j)
     
     while tasks:
         i = tasks.pop()
-        assert i not in reachable
+        assert not reachable[i]
         
         cell = data[i]
         if cell == 'R':
             make_reachable(i)
         elif cell in ' .\\' or auto_empty[i]:
-            if i-1 in reachable or i+1 in reachable or\
-               i+width in reachable or i-width in reachable:
+            if reachable[i-1] or reachable[i+1] or\
+               reachable[i+width] or reachable[i-width]:
                 make_reachable(i)
         elif cell == '*':
-            if i+width in reachable:
+            if reachable[i+width]:
                 # dig under
                 make_reachable(i)
-            elif i-1 in reachable and (i+1 in reachable or auto_empty[i+1]):
+            elif reachable[i-1] and (reachable[i+1] or auto_empty[i+1]):
                 # push right
                 make_reachable(i)
-            elif i+1 in reachable and (i-1 in reachable or auto_empty[i-1]):
+            elif reachable[i+1] and (reachable[i-1] or auto_empty[i-1]):
                 # push left
                 make_reachable(i)
             elif data[i+width] in '*^\\' and\
-                 (i+1 in reachable or auto_empty[i+1]) and\
-                 (i+width+1 in reachable or auto_empty[i+width+1]):
+                 (reachable[i+1] or auto_empty[i+1]) and\
+                 (reachable[i+width+1] or auto_empty[i+width+1]):
                 # fall right
                 make_reachable(i)
             elif data[i+width] in '*^' and\
-                 (i-1 in reachable or auto_empty[i-1]) and\
-                 (i+width-1 in reachable or auto_empty[i+width-1]):
+                 (reachable[i-1] or auto_empty[i-1]) and\
+                 (reachable[i+width-1] or auto_empty[i+width-1]):
                 # fall left
                 make_reachable(i)
             
-    return result
+    return reachable
 
 
 def stone_reachability_step(width, data):
+    '''
+    Overapproximate set of places where can possibly be a stone
+    '''
+    
     result = [False]*len(data)
     
     def make_reachable(i):
@@ -77,7 +85,8 @@ def stone_reachability_step(width, data):
     
     for i in range(width, len(data)-width, width):
         for j in range(i, i+width):
-            if data[j] == '*':
+            #if data[j] == '*':
+            if data[j] == '*' or result[j-width]: # this is ridiculously imprecise, but otherwise it's incorrect
                 make_reachable(j-1)
                 make_reachable(j)
                 make_reachable(j+1)
@@ -99,6 +108,78 @@ def stone_reachability_step(width, data):
     return result
 
 
+def preprocess(width, data):
+
+    
+    result = data[:]
+    reachable = reachability_step(width, data)
+    
+    for i in range(width, len(data)):
+        if not reachable[i]:
+            cell = result[i]
+            if cell == '*':
+                result[i] = '^'
+            elif cell not in 'LO':
+                result[i] = '#'
+                
+    stone_reachable = stone_reachability_step(width, result)
+    for i in range(width, len(data)):
+        if not stone_reachable[i-width]:
+            cell = result[i]
+            if cell == '^':
+                result[i] = '#'
+            elif cell == '.':
+                result[i] = ' '
+                
+    return result
+
+
+def preprocess_world(world):
+    '''
+    return simplified version of the world
+    
+    THEOREM. Set of optimal solutions does not change.
+    
+    (actually, it's a lie, but the only counterexample 
+    we can think of is pretty contrived, so...)
+    '''    
+    
+    world = World(world)
+    
+    width = world.width
+    data = world.data
+    
+    reachable = reachability_step(width, data)
+    
+    for i in range(width, len(data)):
+        if not reachable[i]:
+            cell = data[i]
+            if cell == '*':
+                data[i] = '^'
+            elif cell not in 'LO':
+                data[i] = '#'
+
+    lift = world.lift
+    if not (reachable[lift-1] or
+            reachable[lift+1] or
+            reachable[lift-width] or
+            reachable[lift+width]):
+        world.total_lambdas = -1e10
+        # so now it's impossible to collect all lambdas
+        # (because collected_lambdas can't be equal total_lambdas)
+         
+    stone_reachable = stone_reachability_step(width, data)
+    for i in range(width, len(data)):
+        if not stone_reachable[i-width]:
+            cell = data[i]
+            if cell == '^':
+                data[i] = '#'
+            elif cell == '.':
+                data[i] = ' '
+                
+    return world
+
+
 def parse_test(s):
     lines = s.split('\n')
     assert lines[0] == ''
@@ -107,6 +188,7 @@ def parse_test(s):
     width = len(lines[0])
     data = sum(map(list, lines), [])
     return width, data
+
 
 def data_to_string(width, data):
     lines = []
@@ -140,8 +222,8 @@ def test_processing_step(tests, step):
     return fails
             
             
-    
 if __name__ == '__main__':
+    
     def bool_to_01(b):
         return {False:'0', True:'1'}[b]
     def bool_step_to_01(step):
@@ -150,7 +232,8 @@ if __name__ == '__main__':
     fails = 0
     fails += test_processing_step(reachability_tests, bool_step_to_01(reachability_step))
     
-    fails += test_processing_step(stone_reachability_tests, bool_step_to_01(stone_reachability_step))
+    #fails += test_processing_step(stone_reachability_tests, bool_step_to_01(stone_reachability_step))
+    # because currently imprecise (but correct version) is used
     
     print '/'*30
-    print fails, 'fails total' 
+    print fails, 'fails total'

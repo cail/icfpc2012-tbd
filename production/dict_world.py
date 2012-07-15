@@ -118,8 +118,6 @@ class DictWorld(WorldBase):
         print 'robot_coords at {}; current score is {}'.format(self.robot_coords, self.get_score_abort())
         
     def execute_command_inplace(self, c):
-        assert c != 'A', 'according to webvalidator behavior, abort is not command'
-        
         if c == 'L':
             self.move(-1, 0)
         elif c == 'R':
@@ -130,8 +128,10 @@ class DictWorld(WorldBase):
             self.move(0, -1)
         elif c == 'W':
             pass
-        #elif c == 'A':
-        #    self.aborted = True
+        elif c == 'A':
+            self.aborted = True
+            # return immediately because A is not really a command.
+            return
         else:
             raise 'unknown command'
         self.commands.append(c)
@@ -183,10 +183,9 @@ class DictWorld(WorldBase):
         
     def update(self):
         
-        if self.lifted:
-            # their web emulator does that!
+        if self.lifted or self.dead or self.aborted:
             return
-        
+
         _, y = self.robot_coords
         if y <= self.water_level():
             self.underwater += 1
