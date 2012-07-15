@@ -1,5 +1,5 @@
 import warnings
-
+from itertools import chain
 
 def dist((x1, y1), (x2, y2)):
     return abs(x1-x2)+abs(y1-y2)
@@ -7,7 +7,7 @@ def dist((x1, y1), (x2, y2)):
 
 def enumerate_paths_to_goals(world, start, walkable, goal):
     '''
-    yield paths as strings
+    yield (goal_index, paths) as strings
     
     start and goal cells does not have to be in walkable
     '''
@@ -19,6 +19,7 @@ def enumerate_paths_to_goals(world, start, walkable, goal):
     data = world.data
     visited = {start: (-1, '*')}
     tasks = set([start])
+    yielded = set()
     
     while tasks:
         new_tasks = set()
@@ -29,7 +30,8 @@ def enumerate_paths_to_goals(world, start, walkable, goal):
                     visited[j] = i, dir
                     new_tasks.add(j)
                     
-                if data[j] == goal:
+                if data[j] == goal and j not in yielded:
+                    yielded.add(j)
                     path = [dir]
                     k = i
                     while k != -1:
@@ -37,7 +39,7 @@ def enumerate_paths_to_goals(world, start, walkable, goal):
                         path.append(dir)
                     path = ''.join(path)[::-1]
                     assert path.startswith('*')
-                    yield path[1:]
+                    yield j, path[1:]
                     
         tasks = new_tasks
 
@@ -55,14 +57,21 @@ def path_to_nearest_lambda_or_lift(world):
     else:
         goal = '\\'
     
-    return next(enumerate_paths_to_goals(world, start=world.robot, walkable=' .!', goal=goal),
-                None)
+    result= next(enumerate_paths_to_goals(world, start=world.robot, walkable=' .!\\', goal=goal),
+                 None)
+    if result is not None:
+        _, path = result
+        return path
+    else:
+        return None
     
+
+  
                 
 if __name__ == '__main__':
     from world import World
     
-    world = World.from_file('../data/sample_maps/contest5.map')
+    world = World.from_file('../data/sample_maps/contest3.map')
     
     world.show()
     

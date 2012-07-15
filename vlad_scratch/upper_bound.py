@@ -1,5 +1,6 @@
 
 from utils import dist
+from salesman import salesman_lower_bound
 
 
 
@@ -13,25 +14,15 @@ def upper_bound(state):
     '''
     
     collectable_lambdas = state.collected_lambdas+sum(1 for _ in state.enumerate_lambdas())
+    # TODO: count rocks as well!
 
     # TODO: take trampolines into account in max_dist calculation
 
     if collectable_lambdas == state.total_lambdas:
-            
-        if state.collected_lambdas == state.total_lambdas:
-            max_dist = dist(state.robot_coords, state.lift_coords)
-        else:
-            max_dist = 0
-            for xy in state.enumerate_lambdas():
-                max_dist = max(max_dist, 
-                               dist(state.robot_coords, xy)+dist(xy, state.lift_coords))
+        max_dist = salesman_lower_bound(state, need_exit=True)
         return 75*state.total_lambdas-max_dist
-    
     else:
-        max_dist = 0
-        for xy in state.enumerate_lambdas():
-            max_dist = max(max_dist, 
-                           dist(state.robot_coords, xy))
+        max_dist = salesman_lower_bound(state, need_exit=False)
                     
         return 50*collectable_lambdas-max_dist
     
