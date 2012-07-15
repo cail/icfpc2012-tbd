@@ -7,18 +7,19 @@ def assert_eq(a, b):
 
 class DualWorld(WorldBase):
     def __init__(self, w1, w2):
+        self.error = ''
         self.w1 = w1
         self.w2 = w2
         s1 = w1.get_map_string()
         s2 = w2.get_map_string()
         if s1 != s2:
+            self.error = 'simulation diverged!!'
             print 'simulation diverged!!!!!'
             print s1
             print '---'
             print s2
             print '---'
             #assert False
-            self.w1 = self.w2 = w1
         
     @staticmethod
     def from_string(s):
@@ -35,8 +36,10 @@ class DualWorld(WorldBase):
     def get_score_abort(self):
         s1 = self.w1.get_score_abort()
         s2 = self.w2.get_score_abort()
-        assert_eq(s1, s2)
-        return s1
+        if s1 == s2:
+            return s1
+        else:
+            return self.error_message+'\n'+s1+'\n'+s2
     
     def get_map_string(self):
         result = self.w1.get_map_string()

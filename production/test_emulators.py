@@ -111,4 +111,5 @@ def run_all_tests(*world_classes):
 if __name__ == '__main__':
     from world import World
     from dict_world import DictWorld
-    run_all_tests(World, DictWorld)
+    from dual_world import DualWorld
+    run_all_tests(World, DictWorld, DualWorld)
