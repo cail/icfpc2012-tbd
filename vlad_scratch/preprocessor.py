@@ -20,11 +20,11 @@ def reachability_step(width, data):
                 # fall down
                 auto_empty[i] = True
             elif data[i+width] in '^*' and\
-                 auto_empty[i+width-1] and (data[i+width-1] in ' *'):
+                 auto_empty[i+width-1] and (data[i-1] in ' *'):
                 # fall left
                 auto_empty[i] = True
             elif data[i+width] in '^*\\' and\
-                 auto_empty[i+width+1] and (data[i+width+1] in ' *'):
+                 auto_empty[i+width+1] and (data[i+1] in ' *'):
                 # fall right
                 auto_empty[i] = True
                 
