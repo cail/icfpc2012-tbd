@@ -129,15 +129,14 @@ def solve(state):
         #greedy = []
         
         for cmds in chain(greedy, product(zzz, zzz)):
-            e = None
             new_state = state
             for cmd in cmds:
-                if e is None:
-                    new_state, e = new_state.apply_command(cmd)
+                if new_state.final_score is None:
+                    new_state = new_state.apply_command(cmd)
                     # TODO: check()
                 commands.append(cmd)
             
-            if e is None:
+            if new_state.final_score is None:
                 h = hash(new_state.freeze())
                 if h not in next_steps:
                     next_steps.add(h)
@@ -147,7 +146,7 @@ def solve(state):
                         new_depth = depth-1
                     rec(new_state, new_depth, stack_size-1)
             else:
-                check(e)
+                check(new_state.final_score)
                 
             for _ in cmds:
                 commands.pop()
@@ -175,7 +174,7 @@ def solve(state):
         
 
 if __name__ == '__main__':
-    map_name = 'contest10'
+    map_name = 'contest1'
     map = World.from_file('../data/sample_maps/{}.map'.format(map_name))
     #map.data = filter_walls(map.data) # minimize structures for cloning etc.
     #print len(map.data), 'nonwall cells'
