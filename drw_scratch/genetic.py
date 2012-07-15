@@ -67,8 +67,8 @@ def apply_commands(world, commands):
     return world
 
 class WeightedRandomGenerator(object):
-    def __init__(self, pairs):
-        self.elements, weights = zip(*pairs) 
+    def __init__(self, elements, weights):
+        self.elements = elements 
         self.totals = []
         running_total = 0
 
@@ -90,7 +90,7 @@ class GeneticSolver(object):
         self.landmarks = [i for i, c in enumerate(world.data) if c in landmark_symbols]
         
         self.cache = {}
-        self.mutations_generator = WeightedRandomGenerator(MUTATIONS)
+        self.mutations_generator = WeightedRandomGenerator(*zip(*MUTATIONS))
 
     def random_destination(self, near=None):
         while True:
@@ -146,7 +146,7 @@ class GeneticSolver(object):
                     break
                 world_hash = world.get_hash()
             cache_key = (world_hash, world.robot, destination)
-            cached = (cache_key in self.cache) 
+            cached = (cache_key in self.cache)
             if cached:
                 commands, world_hash = self.cache[cache_key]
                 world = apply_commands(world, commands)
@@ -189,28 +189,39 @@ class GeneticSolver(object):
         scores, candidates = self.evaluate_and_sort(population)
 #        print 'Fitness: max %d, average %d' % (scores[0], sum(scores)/float(len(scores)))
         
-        best = candidates[:int(POPULATION_SIZE * SELECTED_FOR_BREEDING)]
-        golden = [candidate.copy() for candidate in candidates[:NUM_GOLDEN]]
+        num_best = int(POPULATION_SIZE * SELECTED_FOR_BREEDING)
+        best = candidates[:num_best]
+        best_scores = scores[:num_best]
+        min_score = min(best_scores)
+        if min_score < 0:
+            weights = [score - min_score for score in best_scores]
+        else:
+            weights = best_scores
+        random_candidate = WeightedRandomGenerator(candidates, weights)
+        elite = [candidate.copy() for candidate in candidates[:NUM_ELITE]]
         leader = candidates[0].copy()
         
         next_generation = []
         while len(next_generation) < POPULATION_SIZE:
-            parent1 = random.choice(best)
-            parent2 = random.choice(best)
+            parent1 = random_candidate.next()
+            parent2 = random_candidate.next()
+#            parent1 = random.choice(best)
+#            parent2 = random.choice(best)
             while parent2 != parent1:
-                parent2 = random.choice(best)
+#                parent2 = random.choice(best)
+                parent2 = random_candidate.next()
+
             
             if random.random() < CROSSOVER_RATE:
                 child = crossover(parent1, parent2)
             else:
                 child = parent1.copy()
-            
-            for _ in xrange(MUTATION_ATTEMPTS):
-                if random.random() < MUTATION_RATE:
-                    child = self.mutate(child)
+                for _ in xrange(MUTATION_ATTEMPTS):
+                    if random.random() < MUTATION_RATE:
+                        child = self.mutate(child)
             next_generation.append(child)
         
-        next_generation.extend(golden)
+        next_generation.extend(elite)
         return (next_generation, leader)
     
     def solve(self, timeout, local_timeout=10):
@@ -241,15 +252,15 @@ class GeneticSolver(object):
 
 
 POPULATION_SIZE = 300
-SELECTED_FOR_BREEDING = 0.2
+SELECTED_FOR_BREEDING = 0.1
 CROSSOVER_RATE = 0.7
 MUTATION_RATE = 0.7
 MUTATION_ATTEMPTS = 4 # stir things up a bit
 LANDMARK_GENE_CHANCE = 0.3 # generates genes that makes us go to interesting places
-NUM_GOLDEN = 3 # top N candidates are copied to the new generation unchanged 
+NUM_ELITE = 3 # top N candidates are copied to the new generation unchanged 
 MUTATIONS = [('insert', 2), ('wait', 2), ('remove', 2), ('fuzz', 0)] # weighted mutations
 SHORT_MOVE_DISTANCE = 3
-SHORT_MOVE_CHANCE = 0.5
+SHORT_MOVE_CHANCE = 0.3
 
 if __name__ == '__main__':
     timeout = 20
