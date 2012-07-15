@@ -1,6 +1,6 @@
 from world import World
 
-from preprocessor import reachability_step, stone_reachability_step
+from preprocessor import reachability_step, stone_reachability_step, preprocess_world
 
 from preprocessor_tests import reachability_tests, stone_reachability_tests
 
@@ -46,7 +46,9 @@ def test_processing_step(tests, step, verbose=False):
         assert w == width
         assert len(expected) == len(data), (len(expected), len(data))
         
-        if expected != reachable:
+        expected_bool = [{'0':False, '1':True}[e] for e in expected]
+        
+        if expected_bool != reachable:
             if not verbose:
                 print '-'*10
                 print test
@@ -57,19 +59,72 @@ def test_processing_step(tests, step, verbose=False):
             
     assert fails == 0, fails
     print 'ok'
+    
+    
+def check_preprocessor(world, commands, verbose=True):
+    
+    w1 = world
+    w2 = preprocess_world(w1)
+    n = 0
+    for cmd in commands:
+        pw1 = w1
+        pw2 = w2
+        w1 = w1.apply_command(cmd)
+        w2 = w2.apply_command(cmd)
+        n += 1
+        
+        if w1.terminated or w2.terminated:
+            break
+        
+    t1 = w1.terminated, w1.score
+    t2 = w2.terminated, w2.score
+    
+    if t1 != t2:
+        print
+        pw1.show()
+        pw2.show()
+        print
+        w1.show()
+        print t1
+        w2.show()
+        print t2
+        print commands[:n]
+        
+        assert False
+    
+    
+def fuzzy_tests():
+    from glob import glob
+    from random import choice, randrange, seed
+    
+    seed(666)
+    
+    print 'preprocessor fuzzy tests:'
+    
+    maps = glob('../data/sample_maps/contest*.map')
+    maps += glob('../data/sample_maps/flood*.map')
+    maps += glob('../data/maps_manual/*.map')
+    
+    for map_path in maps:
+        print map_path,
+        world = World.from_file(map_path)
+        
+        for i in range(50):
+            commands = ''.join(choice('LRUDW') for _ in range(randrange(1000)))
+            check_preprocessor(world, commands, verbose=False)
+            if i % 5 == 0:
+                print '.',
+        print
+        
+    print 'fuzzy tests ok'
             
             
 if __name__ == '__main__':
     
-    def bool_to_01(b):
-        return {False:'0', True:'1'}[b]
-    def bool_step_to_01(step):
-        return lambda w, h: map(bool_to_01, step(w, h))
+    print 'reachability step tests'
+    test_processing_step(reachability_tests, reachability_step)
     
-    print 'reachability'
-    test_processing_step(reachability_tests, bool_step_to_01(reachability_step))
+    print 'stone reachability step tests'
+    test_processing_step(stone_reachability_tests, stone_reachability_step)
     
-    print 'stone reachability'
-    test_processing_step(stone_reachability_tests, bool_step_to_01(stone_reachability_step))
-    # because currently imprecise (but correct version) is used
-    
+    fuzzy_tests()
