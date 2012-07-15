@@ -10,8 +10,10 @@ class VorberWorld(WorldBase):
     Robot = "R"
     Beard = "W"
     Razor = "!"
+    LRock = "@"
     Trampoline = "ABCDEFGHI"
     TrampExit = "123456789"
+    RockTypes = [Rock,LRock]
 
     #interface stuff:
     @staticmethod
@@ -53,6 +55,9 @@ class VorberWorld(WorldBase):
 
     #end interface stuff
 
+    def lambda_count(self):
+        return reduce(lambda a,b: a+b,  map(lambda e: 1 if e in [VorberWorld.Lambda, VorberWorld.LRock] else 0, self.world))
+
     def __init__(self, ss):
         s, _, metadata = ss.partition("\n\n")
         lines = s.split("\n")
@@ -66,7 +71,6 @@ class VorberWorld(WorldBase):
         self.world = list(reduce(lambda a,b:a+b, elines))
         self.height = len(elines)
         self.width = max(map(len, elines))
-        self.lambda_count = reduce(lambda a,b: a+b,  map(lambda e: 1 if e == VorberWorld.Lambda else 0, self.world))
         self.collected_lambdas = 0
         self.new_world = self.world[:]
         self.complete = False
@@ -75,21 +79,22 @@ class VorberWorld(WorldBase):
         self.can_lose = False
         self.final_score = 0
         self.time = 0
+        self.initial_lambda_count = self.lambda_count()
         for l in lines:
             if 'R' in l:
                 self.robot_x = l.index('R')
                 self.robot_y = self.height - lines.index(l) - 1
                 break
         self.parse_meta(metadata)
-        self.flood_timer = self.Flooding
+        self.flood_timer = self.flooding
 
     def parse_meta(self, metadata):
         metadict = dict(line.split(' ', 1) for line in metadata.split('\n') if line)
-        self.Water = int(metadict.get("Water", 0))
-        self.Flooding = int(metadict.get("Flooding", 0))
-        self.Waterproof = int(metadict.get("Waterproof", 0))
-        self.Growth = int(metadict.get("Growth", 25))
-        self.Razors = int(metadict.get("Razors", 0))
+        self.water = int(metadict.get("Water", 0))
+        self.flooding = int(metadict.get("Flooding", 0))
+        self.waterproof = int(metadict.get("Waterproof", 0))
+        self.growth = int(metadict.get("Growth", 25))
+        self.razors = int(metadict.get("Razors", 0))
         self.trampolines = dict(line[11:].split(" targets ") for line in metadata.split('\n') if line.startswith("Trampoline"))
 
     def __repr__(self):
@@ -97,10 +102,13 @@ class VorberWorld(WorldBase):
         res += self.get_map_string()
         res += "\nRobot pos: " + str(self.robot_x)+" " + str(self.robot_y) + "\n"
         res += "Turn: " + str(self.time) + "\n"
-        res += "Water level: " + str(self.Water) + "\n"
+        res += "Water level: " + str(self.water) + "\n"
         res += "flood timer: " + str(self.flood_timer) + "\n"
         res += "time underwater: " + str(self.time_underwater) + "\n"
-        res += "Razors: " + str(self.Razors) + "\n"
+        res += "Razors: " + str(self.razors) + "\n"
+        res += "Initial lambda count: " + str(self.initial_lambda_count) + "\n"
+        res += "collected: "  + str(self.collected_lambdas) + "\n"
+
         return res
 
     def check_range(self, x, y):
@@ -144,21 +152,46 @@ class VorberWorld(WorldBase):
             print x, y, "onoes", self.get(x,y)
 
     def update_cell(self, x, y):
-        if self.get(x,y) == VorberWorld.Rock and self.get(x, y-1) == VorberWorld.Empty:
-            self.set(x, y, VorberWorld.Empty)
-            self.set(x, y-1, VorberWorld.Rock)
-        if self.get(x,y) == VorberWorld.Rock and self.get(x, y-1) == VorberWorld.Rock and self.get(x+1, y) == VorberWorld.Empty and self.get(x+1, y-1) == VorberWorld.Empty:
-               self.set(x,y, VorberWorld.Empty)
-               self.set(x+1,y-1, VorberWorld.Rock)
-        if self.get(x,y) == VorberWorld.Rock and self.get(x, y-1) == VorberWorld.Rock and (self.get(x+1, y) != VorberWorld.Empty or self.get(x+1, y-1) != VorberWorld.Empty) and self.get(x-1, y) == VorberWorld.Empty and self.get(x-1,y-1) == VorberWorld.Empty:
-               self.set(x,y, VorberWorld.Empty)
-               self.set(x-1,y-1, VorberWorld.Rock)
-        if self.get(x,y) == VorberWorld.Rock and self.get(x,y-1) == VorberWorld.Lambda and self.get(x+1, y) == VorberWorld.Empty and self.get(x+1, y-1) == VorberWorld.Empty:
+        t = self.get(x,y)
+        if t in VorberWorld.RockTypes:
+            fallen = False
+            target = []
+            if self.get(x, y-1) == VorberWorld.Empty:
+                self.set(x, y, VorberWorld.Empty)
+                self.set(x, y-1, t)
+                target.append((x,y-1))
+                fallen = True
+            if self.get(x, y-1) in VorberWorld.RockTypes and self.get(x+1, y) == VorberWorld.Empty and self.get(x+1, y-1) == VorberWorld.Empty:
+                self.set(x,y, VorberWorld.Empty)
+                self.set(x+1,y-1, t)
+                target.append((x+1, y-1))
+                fallen = True
+            if self.get(x, y-1) in VorberWorld.RockTypes and (self.get(x+1, y) != VorberWorld.Empty or self.get(x+1, y-1) != VorberWorld.Empty) and self.get(x-1, y) == VorberWorld.Empty and self.get(x-1,y-1) == VorberWorld.Empty:
+                self.set(x,y, VorberWorld.Empty)
+                self.set(x-1,y-1, t)
+                target = (x-1,y-1)
+                fallen = True
+            if self.get(x,y-1) == VorberWorld.Lambda and self.get(x+1, y) == VorberWorld.Empty and self.get(x+1, y-1) == VorberWorld.Empty:
                self.set(x,y,VorberWorld.Empty)
-               self.set(x+1,y-1, VorberWorld.Rock)
-        if self.get(x,y) == VorberWorld.Closed and self.lambda_count == 0:
+               self.set(x+1,y-1, t)
+               target.append((x+1, y-1))
+               fallen = True
+            if fallen:
+                self.check_dead()
+            if t == VorberWorld.LRock and fallen:
+                print "FALLEN!", target
+                tx,ty = target[0]
+                d = self.get(tx,ty-1)
+                print d
+                if d not in [None, VorberWorld.Empty]:
+                    print tx, ty
+                    self.set(tx, ty ,VorberWorld.Lambda)
+
+
+        if self.get(x,y) == VorberWorld.Closed and self.initial_lambda_count == self.collected_lambdas:
             self.set(x,y,VorberWorld.Open)
-        if self.time % self.Growth == 0:
+
+        if self.time % self.growth == 0:
             if self.get(x,y) == VorberWorld.Beard:
                 self.grow_beard(x-1,y-1)
                 self.grow_beard(x-1,y)
@@ -172,28 +205,29 @@ class VorberWorld(WorldBase):
 
 
     def check_dead(self):
-        if self.check_range(self.robot_x, self.robot_y + 1) and self.get(self.robot_x, self.robot_y + 1) != VorberWorld.Rock and self.get_new(self.robot_x, self.robot_y+1) == VorberWorld.Rock:
+        if self.check_range(self.robot_x, self.robot_y + 1) and self.get(self.robot_x, self.robot_y + 1) not in VorberWorld.RockTypes and self.get_new(self.robot_x, self.robot_y+1) in VorberWorld.RockTypes:
             self.dead = True
+        return self.dead
 
 
     def update(self):
         for y in range(self.height):
             for x in range(self.width):
                 self.update_cell(x, y)
+                #if self.dead:
 
-        if self.robot_y < self.Water: # not <= since Water is 1-based and y is 0-based
+        if self.robot_y < self.water: # not <= since Water is 1-based and y is 0-based
             self.time_underwater += 1
         else:
             self.time_underwater = 0
-        if self.time_underwater > self.Waterproof:
+        if self.time_underwater > self.waterproof:
             self.dead = True
-        if self.Flooding > 0:
+        if self.flooding > 0:
             self.flood_timer -= 1
             if self.flood_timer == 0:
-                self.Water += 1
-                self.flood_timer = self.Flooding
+                self.water += 1
+                self.flood_timer = self.flooding
 
-        self.check_dead()
         self.world = self.new_world[:]
 
 
@@ -219,8 +253,8 @@ class VorberWorld(WorldBase):
             self.time -= 1
             self.aborted = True
         if move == 'S':
-            if self.Razors > 0:
-                self.Razors -= 1
+            if self.razors > 0:
+                self.razors -= 1
                 self.grow_beard(old_x-1, old_y-1, VorberWorld.Empty)
                 self.grow_beard(old_x-1, old_y, VorberWorld.Empty)
                 self.grow_beard(old_x-1, old_y+1, VorberWorld.Empty)
@@ -238,7 +272,6 @@ class VorberWorld(WorldBase):
             tv = self.get(new_x, new_y)
             if tv in [VorberWorld.Empty, VorberWorld.Earth, VorberWorld.Lambda, VorberWorld.Open, VorberWorld.Closed, VorberWorld.Razor]:
                 if tv == VorberWorld.Lambda:
-                    self.lambda_count -= 1
                     self.collected_lambdas+= 1
                 if tv == VorberWorld.Open:
                     self.complete = True
@@ -247,7 +280,7 @@ class VorberWorld(WorldBase):
                     self.set_in_world(old_x, old_y, VorberWorld.Empty)
                     return
                 if tv == VorberWorld.Razor:
-                    self.Razors += 1
+                    self.razors += 1
                 self.robot_x = new_x
                 self.robot_y = new_y
                 self.set_in_world(new_x, new_y, VorberWorld.Robot)
@@ -265,18 +298,18 @@ class VorberWorld(WorldBase):
                         self.trampolines.pop(t)
                         self.new_world[self.world.index(t)] = VorberWorld.Empty
 
-            if tv == VorberWorld.Rock and old_x + 1 == new_x and old_y == new_y and self.check_range(old_x+2, old_y) and self.get(old_x+2, old_y) == VorberWorld.Empty:
+            if tv in VorberWorld.RockTypes and old_x + 1 == new_x and old_y == new_y and self.check_range(old_x+2, old_y) and self.get(old_x+2, old_y) == VorberWorld.Empty:
                 self.robot_x = new_x
                 self.robot_y = new_y
                 self.set_in_world(new_x, new_y, VorberWorld.Robot)
                 self.set_in_world(old_x, old_y, VorberWorld.Empty)
-                self.set_in_world(new_x+1, new_y, VorberWorld.Rock)
-            if tv == VorberWorld.Rock and old_x - 1 == new_x and old_y == new_y and self.check_range(old_x-2, old_y) and self.get(old_x-2, old_y) == VorberWorld.Empty:
+                self.set_in_world(new_x+1, new_y, tv)
+            if tv in VorberWorld.RockTypes and old_x - 1 == new_x and old_y == new_y and self.check_range(old_x-2, old_y) and self.get(old_x-2, old_y) == VorberWorld.Empty:
                 self.robot_x = new_x
                 self.robot_y = new_y
                 self.set_in_world(new_x, new_y, VorberWorld.Robot)
                 self.set_in_world(old_x, old_y, VorberWorld.Empty)
-                self.set_in_world(new_x-1, new_y, VorberWorld.Rock)
+                self.set_in_world(new_x-1, new_y, tv)
         else:
             pass
 
@@ -284,8 +317,8 @@ class VorberWorld(WorldBase):
         if self.final_score != 0:
             return True
         if self.complete:
-           self.final_score += self.collected_lambdas*75 - self.time
-           return True
+            self.final_score += self.collected_lambdas*75 - self.time
+            return True
         if self.dead:
             self.final_score += self.collected_lambdas*25 - self.time
             return True
@@ -303,7 +336,7 @@ class VorberWorld(WorldBase):
         return self.score
 
 if __name__ == "__main__":
-    mmap = VorberWorld.from_file("../vorber_scratch/beard.map")
+    mmap = VorberWorld.from_file("../data/sample_maps/horock1.map")
     route = "WWWWWWWWWWWWWWWWWWWLLLUUUUUULLLLLLLLLRRRRRRRRRRRR"
     interactive = True
     if interactive:
