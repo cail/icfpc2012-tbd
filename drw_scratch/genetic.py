@@ -93,7 +93,8 @@ class WeightedRandomGenerator(object):
 class GeneticSolver(object):
     def __init__(self, world):
         self.world = world
-        self.landmarks = [i for i, c in enumerate(world.data) if c in '\L'] # no trampolines
+        landmark_symbols = ['\\', 'L'] + map(chr, range(ord('A'), ord('A')+9))
+        self.landmarks = [i for i, c in enumerate(world.data) if c in landmark_symbols]
         
         self.cache = {}
         self.mutations_generator = WeightedRandomGenerator(MUTATIONS)
