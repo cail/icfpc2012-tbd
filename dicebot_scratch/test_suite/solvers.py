@@ -5,7 +5,7 @@ import backtrack
 import genetic
 import world
 
-time_limit = 15
+time_limit = 50
 
 class fuzz_solver:
     def __init__(self):
