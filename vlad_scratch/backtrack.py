@@ -7,7 +7,7 @@ from itertools import *
 from world import World
 
 from preprocessor import preprocess_world
-from utils import dist, path_to_nearest_lambda_or_exit
+from utils import dist, path_to_nearest_lambda_or_lift
 from upper_bound import upper_bound
 
 
@@ -68,7 +68,7 @@ def solve(state, time_limit=15):
 
         preprocessed = preprocess_world(state)
         
-        if upper_bound(preprocessed) <= best.score:
+        if upper_bound(preprocessed)-state.time <= best.score:
             return
         
         aggressive_preprocess(preprocessed)
@@ -86,7 +86,7 @@ def solve(state, time_limit=15):
         num_commands = len(commands)
         next_steps = set()
         
-        greedy = path_to_nearest_lambda_or_exit(state)
+        greedy = path_to_nearest_lambda_or_lift(state)
         if greedy is not None:
             greedy = [greedy]
         else:

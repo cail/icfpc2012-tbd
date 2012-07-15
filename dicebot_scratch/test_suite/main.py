@@ -42,7 +42,7 @@ from worlds import load_official_basic_worlds,\
 default_interpreter = emulator.interpret
 
 # check solver.py for available ones
-solver_list = [ solvers.fuzz_solver(), solvers.vlad_solver(),
+solver_list = [ solvers.fuzz_solver(), solvers.vlad_solver(), solvers.vlad_search_solver(),
                 solvers.drw_solver(), solvers.predefined_solver() ]
 
 # used in random-based map generators 
@@ -92,6 +92,7 @@ def test_fuzzy(count, min_width = 5, max_width = 1000, min_height = 5, max_heigh
     properties = {'mode' : 'chaotic'}
     if with_water:
         properties['flooding'] = 1 # portions of maps with water
+    
     return test_world_list([ 
         worlds.create_one_random(random.randint(min_height, max_height),
                                  random.randint(min_width, max_width),
@@ -100,6 +101,59 @@ def test_fuzzy(count, min_width = 5, max_width = 1000, min_height = 5, max_heigh
         for _ in range(count) 
     ])
     
+def test_all_random():
+    properties = {'mode' : 'chaotic', 'flooding' : 'true' }
+    
+    count_fuzzy = 10
+    max_height_fuzzy = 50
+    max_width_fuzzy = 50
+    
+    fuzzy = [ 
+        worlds.create_one_random(random.randint(5, max_height_fuzzy),
+                                 random.randint(5, max_width_fuzzy),
+                                 properties
+                                )
+        for _ in range(count_fuzzy) 
+    ]
+    
+    properties = {
+        'mode' : 'balanced',
+        'lambdas' : 0.05,
+        'stones' : 0.3,
+        'walls' : 0.0,
+        'earth_to_empty' : 1.0 
+    }
+    
+    count_balanced = 3
+    height_balanced = 300
+    width_balanced = 300
+    
+    balanced1 = [ 
+        worlds.create_one_random(height_balanced,
+                                 width_balanced,
+                                 properties
+                                )
+        for _ in range(count_balanced) 
+    ]
+    
+    properties = {'mode' : 'mazes' }
+    
+    count_mazes = 5    
+    height_mazes = 500
+    width_mazes = 500
+    
+    mazes = [ 
+        worlds.create_one_random(height_mazes,
+                                 width_mazes,
+                                 properties
+                                )
+        for _ in range(count_mazes) 
+    ]
+    
+    return test_world_list(chain(
+        fuzzy, balanced1, mazes
+    ))
+        
 def test_all_official():
     return test_world_list(worlds.load_official_worlds())
     
@@ -141,18 +195,18 @@ if __name__ == '__main__':
     print 'Using seed', seed 
     random.seed(seed)
     
-    random_stats = test_fuzzy(4, max_width = 20, max_height = 30, with_water = True)
+#    random_stats = test_all_random()
     predef_stats = test_world_list(chain(
-        load_official_basic_worlds(),
+#        load_official_basic_worlds(),
         load_official_flood_worlds(),
-        load_our_worlds()
+#        load_our_worlds()
     )) 
 
-    print_as_table(random_stats.items())
+#    print_as_table(random_stats.items())
     print_as_table(predef_stats.items())    
 
     # uncomment to print detailed data including solutions
     
-    #import json
-    #print json.dumps(random_stats, indent=4, sort_keys = False)
-    #print json.dumps(predef_stats, indent=4, sort_keys = False)
+    import json
+#    open("random_stats.json", "w").write(json.dumps(random_stats, indent=4, sort_keys = False))
+    open("predef_stats.json", "w").write(json.dumps(predef_stats, indent=4, sort_keys = False))
