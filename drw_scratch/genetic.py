@@ -2,6 +2,7 @@ import random
 import itertools
 import sys
 import time
+import bisect
 
 from world import World
 import pathfinder
@@ -10,12 +11,9 @@ import pathfinder
 # - add/remove waits between actions
 # - add/remove action
 
-
 # will need primitives for pushing boulders
 # (treating a boulder like an empty destination 
 # space does nothing more often than not)
-
-# TODO: some kind of caching for paths
 
 class Candidate(object):
     __slots__ = [
@@ -45,12 +43,15 @@ class Candidate(object):
         index = random.randrange(len(self.actions))
         self.actions.pop(index)
         self.waits.pop(index)
-    
+
     def copy(self):
         new_instance = Candidate()
         new_instance.actions = self.actions[:]
         new_instance.waits = self.waits[:]
         return new_instance
+    
+    def __len__(self):
+        return len(self.actions)
         
         
 def crossover(candidate1, candidate2):
@@ -72,12 +73,30 @@ def apply_commands(world, commands):
             break
     return world
 
+class WeightedRandomGenerator(object):
+    def __init__(self, pairs):
+        self.elements, weights = zip(*pairs) 
+        self.totals = []
+        running_total = 0
+
+        for w in weights:
+            running_total += w
+            self.totals.append(running_total)
+
+    def next(self):
+        rnd = random.random() * self.totals[-1]
+        return self.elements[bisect.bisect_right(self.totals, rnd)]
+
+    def __call__(self):
+        return self.next()
+
 class GeneticSolver(object):
     def __init__(self, world):
         self.world = world
         self.landmarks = [i for i, c in enumerate(world.data) if c in '\L'] # no trampolines
         
         self.cache = {}
+        self.mutations_generator = WeightedRandomGenerator(MUTATIONS)
 
     def random_destination(self):
         while True:
@@ -92,13 +111,19 @@ class GeneticSolver(object):
         return Candidate([self.random_destination() for _ in xrange(length)])
     
     def mutate(self, candidate):
-        r = random.random()
-        if r < 0.5 if len(candidate.actions) > 1 else 0.75: # quick fix to avoid empty candidates
+        mutation = self.mutations_generator.next()
+        if len(candidate) == 1:
+            while mutation == 'remove':
+                mutation = self.mutations_generator.next()
+                
+        if mutation == 'insert':
             candidate.mutate_insert(self.random_destination())
-        elif r > 0.75:
+        elif mutation == 'wait':
             candidate.mutate_wait()
-        else:
+        elif mutation == 'remove':
             candidate.mutate_remove()
+        else:
+            assert False, 'Mutation not implemented: %s' % mutation
         return candidate
 
     def fitness(self, candidate):
@@ -212,6 +237,7 @@ MUTATION_RATE = 0.7
 MUTATION_ATTEMPTS = 4 # stir things up a bit
 LANDMARK_GENE_CHANCE = 0.3 # generates genes that makes us go to interesting places
 NUM_GOLDEN = 3 # top N candidates are copied to the new generation unchanged 
+MUTATIONS = [('insert', 2), ('wait', 1), ('remove', 1)] # weighted mutations
 
 if __name__ == '__main__':
     timeout = 20
