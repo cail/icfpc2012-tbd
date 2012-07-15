@@ -36,6 +36,9 @@ class World(WorldBase):
         'underwater',
     ]
     
+
+    #### World interface, kind of
+    
     def __init__(self, other = None):
         if other is not None:
             self.width = other.width
@@ -90,17 +93,11 @@ class World(WorldBase):
         world.time = 0
         world.final_score = None
         
-        if metadata:
-            metadict = dict(line.split(' ', 1) for line in metadata.split('\n') if line)
-            world.water = int(metadict['Water'])
-            world.flooding = int(metadict['Flooding'])
-            world.waterproof = int(metadict['Waterproof'])
-            world.underwater = 0
-        else:
-            world.water = 0
-            world.flooding = 0
-            world.waterproof = 10 # to be sure
-            world.underwater = 0
+        metadict = dict(line.split(' ', 1) for line in metadata.split('\n') if line)
+        world.water = int(metadict.get('Water', 0))
+        world.flooding = int(metadict.get('Flooding', 0))
+        world.waterproof = int(metadict.get('Waterproof', 10))
+        world.underwater = 0
         
         return world
     
@@ -115,21 +112,33 @@ class World(WorldBase):
     def show(self):
         print self.get_map_string()
         
-    def is_terminated(self):
+    # time is an actual field in this implementation.
+
+    @property        
+    def terminated(self):
         return self.final_score is not None
     
+    @property
+    def score(self):
+        if self.final_score is not None:
+            return self.final_score
+        return self.get_score_abort() 
+
+    @property    
     def water_level(self):
         if self.flooding == 0:
             return 0
         return self.water + (self.time - 1) // self.flooding 
 
     def apply_command(self, command):
+        assert not self.terminated
+        
         new_world = World(self)
         
         # abort is not a command really
         if command == 'A':
             new_world.final_score = new_world.get_score_abort() 
-            return new_world, new_world.final_score
+            return new_world
         
         new_world.time += 1
         
@@ -156,7 +165,7 @@ class World(WorldBase):
             elif new_cell == 'O':
                 new_data[robot] = ' '
                 new_world.final_score = new_world.get_score_win() 
-                return new_world, new_world.final_score 
+                return new_world 
             elif new_cell == '*' and command in 'LR' and data[new_robot + direction] == ' ':
                 new_data[new_robot + direction] = '*'                
                 new_data[new_robot] = 'R'
@@ -170,11 +179,11 @@ class World(WorldBase):
             new_world.data = new_data = new_data[:]
             new_world.robot = new_robot
             
-        if new_robot >= len(data) - width * (new_world.water_level() + 1):
+        if new_robot >= len(data) - width * (new_world.water_level + 1):
             new_world.underwater += 1
             if new_world.underwater > new_world.waterproof:
                 new_world.final_score = new_world.get_score_lose() 
-                return new_world, new_world.final_score
+                return new_world
         else:
             new_world.underwater = 0
         
@@ -190,7 +199,7 @@ class World(WorldBase):
                         new_data[offset_below] = '*'
                         if offset_below + width == new_robot:
                             new_world.final_score = new_world.get_score_lose() 
-                            return new_world, new_world.final_score
+                            return new_world
                         continue
                     if cell_below == '*':
                         if data[offset + 1] == ' ' and data[offset_below + 1] == ' ':
@@ -198,14 +207,14 @@ class World(WorldBase):
                             new_data[offset_below + 1] = '*'
                             if offset_below + width + 1 == new_robot:
                                 new_world.final_score = new_world.get_score_lose() 
-                                return new_world, new_world.final_score
+                                return new_world
                             continue
                         if data[offset - 1] == ' ' and data[offset_below - 1] == ' ':
                             new_data[offset] = ' '
                             new_data[offset_below - 1] = '*'
                             if offset_below + width - 1 == new_robot:
                                 new_world.final_score = new_world.get_score_lose() 
-                                return new_world, new_world.final_score
+                                return new_world
                             continue
                     if cell_below == '\\':
                         if data[offset + 1] == ' ' and data[offset_below + 1] == ' ':
@@ -213,10 +222,9 @@ class World(WorldBase):
                             new_data[offset_below + 1] = '*'
                             if offset_below + width + 1 == new_robot:
                                 new_world.final_score = new_world.get_score_lose() 
-                                return new_world, new_world.final_score
+                                return new_world
                             continue
-                        
-        return new_world, None
+        return new_world
      
     def freeze(self):
         '''
@@ -224,6 +232,9 @@ class World(WorldBase):
         '''
         return (tuple(self.data), self.time)
    
+    
+    #### Implementation stuff
+    
     def index_to_coords(self, index):
         return index%self.width-1, (len(self.data)-1-index)//self.width-1
     
