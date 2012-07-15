@@ -114,12 +114,16 @@ map2        score     score
 '''
 def print_as_table(stats):
     solver_names = [ solver.name for solver in solver_list ]
-    print "\t\t\t%s" % '\t'.join(solver_names)
+    print '{:20}'.format(''),
+    for solver_name in solver_names:
+        print '{:>10}'.format(solver_name),
+    print      
     for world_name, world_stats in stats.items():
-        scores = [ 0 for _ in solver_names ]
-        for solver_name, solver_stat in world_stats['stats_per_solver'].items():
-            scores[solver_names.index(solver_name)] = str(solver_stat['score'])                    
-        print '%s\t%s' % (world_name, '\t'.join(scores)) 
+        print '{:20}'.format(world_name),
+        for solver_name in solver_names:
+            print '{:10}'.format(world_stats['stats_per_solver'][solver_name]['score']),
+        print                    
+        
     
 if __name__ == '__main__':
     random.seed(42)
