@@ -17,45 +17,38 @@ import pathfinder
 
 class Candidate(object):
     __slots__ = [
-        'actions',
-        'waits'
+        'genes',
     ]
     
     def __init__(self, destinations=None):
         if destinations:
-            self.actions = destinations
+            self.genes = [('move', destination) for destination in destinations]
         else:
-            self.actions = []
-        self.waits = [0] * len(self.actions)
+            self.genes = []
         
     def insert(self, index, destination):
-        self.actions.insert(index, destination)
-        self.waits.insert(index, 0)
+        self.genes.insert(index, ('move', destination))
     
     def remove(self, index):
-        index = random.randrange(len(self.actions))
-        self.actions.pop(index)
-        self.waits.pop(index)
+        self.genes.pop(index)
 
     def copy(self):
         new_instance = Candidate()
-        new_instance.actions = self.actions[:]
-        new_instance.waits = self.waits[:]
+        new_instance.genes = self.genes[:]
         return new_instance
     
     def __len__(self):
-        return len(self.actions)
+        return len(self.genes)
         
         
 def crossover(candidate1, candidate2):
     while True: # quick fix to avoid empty offspring
-        index1 = random.randrange(len(candidate1.actions))
-        index2 = random.randrange(len(candidate2.actions))
+        index1 = random.randrange(len(candidate1))
+        index2 = random.randrange(len(candidate2))
         
         offspring = Candidate()
-        offspring.actions = candidate1.actions[:index1] + candidate2.actions[index2:]
-        offspring.waits = candidate1.waits[:index1] + candidate2.waits[index2:]
-        if len(offspring.actions) > 0:
+        offspring.genes = candidate1.genes[:index1] + candidate2.genes[index2:]
+        if len(offspring) > 0:
             return offspring    
 
 class WeightedRandomGenerator(object):
@@ -111,19 +104,19 @@ class GeneticSolver(object):
         index = random.randrange(len(candidate))
         if mutation == 'insert':
             if random.random() < SHORT_MOVE_CHANCE:
-                last_destination = candidate.actions[index - 1] \
+                # TODO: FIX
+                last_destination = candidate.genes[index - 1][1] \
                     if index > 0 else self.world.robot  
                 candidate.insert(index, self.random_destination(near=last_destination))
             else:
                 candidate.insert(index, self.random_destination())
         elif mutation == 'wait':
-            new_value = candidate.waits[index] + random.choice([+1, -1])
-            if new_value < 0: new_value = 1
-            candidate.waits[index] = new_value
+            pass
+#            new_value = candidate.waits[index] + random.choice([+1, -1])
+#            if new_value < 0: new_value = 1
+#            candidate.waits[index] = new_value
         elif mutation == 'remove':
             candidate.remove(index)
-        elif mutation == 'fuzz':
-            assert False
         else:
             assert False, 'Mutation not implemented: %s' % mutation
         return candidate
@@ -131,12 +124,14 @@ class GeneticSolver(object):
     def fitness(self, candidate):
         world = World(self.world)
         world_hash = world.get_hash()
-        for (wait, destination) in itertools.izip(candidate.waits, candidate.actions):
-            if wait > 0:
-                world = world.apply_commands('W' for _ in xrange(wait))
-                if world.terminated:
-                    break
-                world_hash = world.get_hash()
+        for gene in candidate.genes:
+            gene_type, gene_value = gene
+            destination = gene_value
+#            if wait > 0:
+#                world = world.apply_commands('W' for _ in xrange(wait))
+#                if world.terminated:
+#                    break
+#                world_hash = world.get_hash()
             cache_key = (world_hash, world.robot, destination)
             cached = (cache_key in self.cache)
             if cached:
@@ -171,8 +166,7 @@ class GeneticSolver(object):
     
     def evaluate_and_sort(self, population):
         scored_candidates = [(self.fitness(candidate), candidate) for candidate in population]
-        scored_candidates.sort()
-        scored_candidates.reverse()
+        scored_candidates.sort(reverse=True)
         scores = [score for (score, candidate) in scored_candidates]
         candidates = [candidate for (score, candidate) in scored_candidates]
         return (scores, candidates)
