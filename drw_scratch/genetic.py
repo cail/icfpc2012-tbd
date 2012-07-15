@@ -67,10 +67,14 @@ def crossover(candidate1, candidate2):
 class GeneticSolver(object):
     def __init__(self, world):
         self.world = world
+        self.landmarks = [i for i, c in enumerate(world.data) if c in '\L'] # no trampolines
 
     def random_destination(self):
         while True:
-            i = random.randrange(len(self.world.data))
+            if random.random() < LANDMARK_GENE_CHANCE:
+                i = random.choice(self.landmarks)
+            else:
+                i = random.randrange(len(self.world.data))
             if self.world.data[i] != '#':
                 return i
         
@@ -158,7 +162,7 @@ class GeneticSolver(object):
             if random.random() < CROSSOVER_RATE:
                 child = crossover(parent1, parent2)
             else:
-                child = random.choice([parent1, parent2])
+                child = random.choice([parent1, parent2]).copy()
             
             for i in xrange(MUTATION_ATTEMPTS):
                 if random.random() < MUTATION_RATE:
@@ -186,6 +190,7 @@ SELECTED_FOR_BREEDING = 0.2
 CROSSOVER_RATE = 0.7
 MUTATION_RATE = 0.7
 MUTATION_ATTEMPTS = 4 # stir things up a bit
+LANDMARK_GENE_CHANCE = 0.3 # generates genes that makes us go to interesting places
 
 if __name__ == '__main__':
     timeout = 20
