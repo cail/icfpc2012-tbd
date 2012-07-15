@@ -93,20 +93,19 @@ class GeneticSolver(object):
         source = world.robot
         for (wait, destination) in itertools.izip(candidate.waits, candidate.actions):
             for i in xrange(wait):
-                world, final_score = world.apply_command('W')
-                if final_score is not None:
-                    return final_score
+                world = world.apply_command('W')
+                if world.terminated:
+                    return world.score
             path = pathfinder.plot_path(world, destination)
             if path == None:
                 return 0
             commands = pathfinder.path_to_commands(path)
             for c in commands:
-                world, final_score = world.apply_command(c)
-                if final_score is not None:
-                    return final_score
-        final_score = world.get_score_abort()
-        return final_score
-
+                world = world.apply_command(c)
+                if world.terminated:
+                    return world.score
+        return world.score
+    
     # copy-paste of the above because it's 5:20 am and people need this
     # the difference is that fitness avoids plotting junk actions
     # there's actually a lot of junk DNA so this is important
@@ -117,16 +116,16 @@ class GeneticSolver(object):
         for (wait, destination) in itertools.izip(candidate.waits, candidate.actions):
             for i in xrange(wait):
                 compiled.append('W')
-                world, final_score = world.apply_command('W')
-                if final_score is not None:
+                world = world.apply_command('W')
+                if world.terminated:
                     return ''.join(compiled)
             path = pathfinder.plot_path(world, destination)
             assert(path != None)
             commands = pathfinder.path_to_commands(path)
             for c in commands:
                 compiled.append(c)
-                world, final_score = world.apply_command(c)
-                if final_score is not None:
+                world = world.apply_command(c)
+                if world.terminated:
                     return ''.join(compiled)
         compiled.append('A')
         return ''.join(compiled)
