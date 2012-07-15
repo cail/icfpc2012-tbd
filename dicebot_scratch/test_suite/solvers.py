@@ -2,10 +2,11 @@ import random
 import re
 
 import backtrack
+import search
 import genetic
 import world
 
-time_limit = 50
+time_limit = 20
 
 class fuzz_solver:
     def __init__(self):
@@ -28,6 +29,18 @@ class vlad_solver:
         world_obj = world.World.from_string(src)
         _, solution = backtrack.solve(world_obj, time_limit)
         return solution
+        
+    pass
+
+class vlad_search_solver:
+    def __init__(self):
+        self.name = 'Vlad-search'
+    
+    def solve(self, src, filename):
+        world_obj = world.World.from_string(src)
+        solver = search.Solver(world_obj, time_limit)
+        solver.solve()
+        return solver.get_best()
         
     pass
 

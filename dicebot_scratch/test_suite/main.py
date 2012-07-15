@@ -42,7 +42,7 @@ from worlds import load_official_basic_worlds,\
 default_interpreter = emulator.interpret
 
 # check solver.py for available ones
-solver_list = [ solvers.fuzz_solver(), solvers.vlad_solver(),
+solver_list = [ solvers.fuzz_solver(), solvers.vlad_solver(), solvers.vlad_search_solver(),
                 solvers.drw_solver(), solvers.predefined_solver() ]
 
 # used in random-based map generators 
@@ -136,8 +136,22 @@ def test_all_random():
         for _ in range(count_balanced) 
     ]
     
+    properties = {'mode' : 'mazes' }
+    
+    count_mazes = 5    
+    height_mazes = 500
+    width_mazes = 500
+    
+    mazes = [ 
+        worlds.create_one_random(height_mazes,
+                                 width_mazes,
+                                 properties
+                                )
+        for _ in range(count_mazes) 
+    ]
+    
     return test_world_list(chain(
-        fuzzy, balanced1
+        fuzzy, balanced1, mazes
     ))
         
 def test_all_official():
@@ -181,18 +195,18 @@ if __name__ == '__main__':
     print 'Using seed', seed 
     random.seed(seed)
     
-    random_stats = test_all_random()
+#    random_stats = test_all_random()
     predef_stats = test_world_list(chain(
-        load_official_basic_worlds(),
+#        load_official_basic_worlds(),
         load_official_flood_worlds(),
-        load_our_worlds()
+#        load_our_worlds()
     )) 
 
-    print_as_table(random_stats.items())
+#    print_as_table(random_stats.items())
     print_as_table(predef_stats.items())    
 
     # uncomment to print detailed data including solutions
     
     import json
-    open("random_stats.json", "w").write(json.dumps(random_stats, indent=4, sort_keys = False))
+#    open("random_stats.json", "w").write(json.dumps(random_stats, indent=4, sort_keys = False))
     open("predef_stats.json", "w").write(json.dumps(predef_stats, indent=4, sort_keys = False))
