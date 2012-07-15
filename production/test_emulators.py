@@ -4,23 +4,31 @@ import webvalidator
 tests = [
     ('contest1', 'LDRDDULULLDD'), # almost complete solution
     ('contest1', 'LDRDDULULLDDL'), # complete optimal solution
+    ('contest1', 'LDRDDULULLDDLLLL'), # complete solution with extra stuff
     ('contest2', 'RRUDRRULURULLLLDDDL'), # complete optimal solution
     ('contest3', 'LDDDRRRRDDLLLLLDRRURRURUR'), # complete optimal(?) solution
     
+    ('contest5', 'LLURURUUURRRRRUULLL'), # reasonably good solutions
+    ('contest6', 'RUULRRRRRRRRRRUUULLLLLLLDLLLUUUUUURULURR'),
+        
     ('contest8', 'WWWRRRLLLWWWA'), # abort or death?
 
     ('contest1', 'LW'), # there was a bug
     
-    # flood is not implemented in fj's world    
     ('flood1', 'LLLLDDDDDWWWWUUUWWWWWW'), # surface barely in time
     ('flood1', 'LLLLDDDDDWWWWWWWWWWWW'), # drowning
     ('flood1', 'W'*100), # passive drowning
-    # write your own tests, especially for interesting cases
+    
+    
+    
+    # Pls add your own tests everyone, especially for interesting cases
     ]
+
+
+
     
 class WebValidatorProxy(object):
     def __init__(self, map_name, commands):
-#        webcmd = ''.join(c for c in commands if c in 'UDLRWA') 
         self.score, self.map_string = webvalidator.validate(map_name, commands, 10.0)
     def get_map_string(self):
         return self.map_string
