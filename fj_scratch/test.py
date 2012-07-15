@@ -8,10 +8,6 @@ print score, '\n', map
 sys.exit()
 
 
-m = Map.load('../data/sample_maps/contest8.map')
-for c in 'WWWRRRLLLWWWA':
-    print m.execute(c)
-    m.show()
     
 #m = Map.load('test.map')
 #while not m.done:

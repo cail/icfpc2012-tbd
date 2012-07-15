@@ -1,6 +1,7 @@
 import random
 import itertools
 import sys
+import time
 
 from world import World
 import pathfinder
@@ -92,30 +93,57 @@ class GeneticSolver(object):
         source = world.robot
         for (wait, destination) in itertools.izip(candidate.waits, candidate.actions):
             for i in xrange(wait):
-                world, final_score = world.apply_command('W')
-                if final_score is not None:
-                    return final_score
+                world = world.apply_command('W')
+                if world.terminated:
+                    return world.score
             path = pathfinder.plot_path(world, destination)
             if path == None:
                 return 0
             commands = pathfinder.path_to_commands(path)
             for c in commands:
-                world, final_score = world.apply_command(c)
-                if final_score is not None:
-                    return final_score
-        final_score = world.get_score_abort()
-        return final_score
+                world = world.apply_command(c)
+                if world.terminated:
+                    return world.score
+        return world.score
     
-    def step(self, population):
+    # copy-paste of the above because it's 5:20 am and people need this
+    # the difference is that fitness avoids plotting junk actions
+    # there's actually a lot of junk DNA so this is important
+    def compile(self, candidate):
+        world = World(self.world)
+        source = world.robot
+        compiled = []
+        for (wait, destination) in itertools.izip(candidate.waits, candidate.actions):
+            for i in xrange(wait):
+                compiled.append('W')
+                world = world.apply_command('W')
+                if world.terminated:
+                    return ''.join(compiled)
+            path = pathfinder.plot_path(world, destination)
+            assert(path != None)
+            commands = pathfinder.path_to_commands(path)
+            for c in commands:
+                compiled.append(c)
+                world = world.apply_command(c)
+                if world.terminated:
+                    return ''.join(compiled)
+        compiled.append('A')
+        return ''.join(compiled)
+    
+    def evaluate_and_sort(self, population):
         scored_candidates = [(self.fitness(candidate), candidate) for candidate in population]
         scored_candidates.sort()
         scored_candidates.reverse()
+        scores = [score for (score, candidate) in scored_candidates]
+        candidates = [candidate for (score, candidate) in scored_candidates]
+        return (scores, candidates)
+    
+    def step(self, population):
         
-        scores = [fitness for (fitness, candidate) in scored_candidates]
+        scores, candidates = self.evaluate_and_sort(population)
         print 'Fitness: max %d, average %d' % (scores[0], sum(scores)/float(len(scores)))
         
-        best = [candidate for (fitness, candidate) in \
-                scored_candidates[:int(POPULATION_SIZE * SELECTED_FOR_BREEDING)]]
+        best = candidates[:int(POPULATION_SIZE * SELECTED_FOR_BREEDING)]
         
         golden = [candidate.copy() for candidate in best[:3]]
         
@@ -139,11 +167,17 @@ class GeneticSolver(object):
         next_generation.extend(golden)
         return next_generation
     
-    def solve(self):
+    def solve(self, timeout):
         population = [self.generate_candidate(3) for i in xrange(POPULATION_SIZE)]
+        start_time = time.time()
         while True:
             population = self.step(population)
+            if time.time() - start_time > timeout:
+                break
 
+        scores, candidates = self.evaluate_and_sort(population)
+        leader = candidates[0]
+        return self.compile(leader)
 
 
 POPULATION_SIZE = 300
@@ -153,9 +187,12 @@ MUTATION_RATE = 0.7
 MUTATION_ATTEMPTS = 4 # stir things up a bit
 
 if __name__ == '__main__':
-    assert(len(sys.argv) == 2)
-    map_name = sys.argv[1]
-    print map_name
-    world = World.from_file('../data/sample_maps/%s.map' % map_name)
+    timeout = 20
+    assert(len(sys.argv) >= 2)
+    map_path = sys.argv[1]
+    if len(sys.argv) > 2:
+        timeout = int(sys.argv[2])
+    print map_path
+    world = World.from_file(map_path)
     solver = GeneticSolver(world)
-    solver.solve()
+    print solver.solve(timeout)
