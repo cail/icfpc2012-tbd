@@ -34,7 +34,7 @@ class World(WorldBase):
         'collected_lambdas',
         'time',
         'final_score', # non-None when the world is terminated
-        'underwater',
+        'time_underwater',
     ]
     
 
@@ -54,7 +54,7 @@ class World(WorldBase):
             self.collected_lambdas = other.collected_lambdas
             self.time = other.time
             self.final_score = other.final_score
-            self.underwater = other.underwater
+            self.time_underwater = other.time_underwater
 
     @classmethod
     def from_string(World, src):
@@ -97,7 +97,7 @@ class World(WorldBase):
         world.water = int(metadict.get('Water', 0))
         world.flooding = int(metadict.get('Flooding', 0))
         world.waterproof = int(metadict.get('Waterproof', 10))
-        world.underwater = 0
+        world.time_underwater = 0
         
         return world
     
@@ -210,11 +210,11 @@ class World(WorldBase):
                                 new_world.final_score = new_world.get_score_lose()
                                 
         if new_robot >= len(data) - width * (new_world.water_level + 1):
-            new_world.underwater += 1
-            if new_world.underwater > new_world.waterproof:
+            new_world.time_underwater += 1
+            if new_world.time_underwater > new_world.waterproof:
                 new_world.final_score = new_world.get_score_lose() 
         else:
-            new_world.underwater = 0
+            new_world.time_underwater = 0
 
         return new_world
      

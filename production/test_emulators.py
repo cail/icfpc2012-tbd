@@ -23,13 +23,13 @@ tests = [
 
     ('flood1', 'WWWWWWWWLLLLWWWDDDWDWWWWU'), # jump out of water the same turn water rises on the last turn of waterproof
 
-    ('flood1', 'LLLLDWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWUWWW'), # goes really wrong if you forget to reset underwater timer when getting out 
+    ('flood1', 'LLLLDWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWUWWW'), # goes really wrong if you forget to reset time_underwater timer when getting out 
     
     ('contest8', 'RRRRRRRULD'), # map should be completely evaluated on death
     ('contest8', 'RRRRRUD'), # and with down-up evaluation as well.
     
-    ('flood1', 'LLLLDDDDWWWDWWWWU'), # can't escape from underwater     
-    ('flood1', 'LLLLDDDDWWWDWWWU'), # can escape from underwater
+    ('flood1', 'LLLLDDDDWWWDWWWWU'), # can't escape from time_underwater     
+    ('flood1', 'LLLLDDDDWWWDWWWU'), # can escape from time_underwater
     
     ('flood1', 'LLLLLLDDDRUWWWWWWWWWWWWWWWWWWWWWWWWWWL'), # drowning happens after the update     
     ('flood1', 'LLLLLLDDDRUWWWWWWWWWWWWWWWWWWWWWWWWWWD'), # update doesn't prevent drowning
@@ -100,7 +100,7 @@ def validate_internal(map_data, commands, web_map_name, world_classes):
                 print format_world_state(prev_world)
                 print
             for result, emulators in result_dict.iteritems():
-                print '## ' + ', '.join(emulators)
+                print '*** ' + ', '.join(emulators)
                 print result
                 print
             print
@@ -175,8 +175,10 @@ def run_interactively(world, initial_commands=''):
         print world.get_map_string()
         print 'Time: {:>2}, Robot: x={}, y={}, idx={}'.format(world.time, coords[0] + 1, coords[1] + 1, robot)
         if world.flooding:
-            print 'Water level: {}, underwater: {}/{}'.format(
-                    world.water_level, world.underwater, world.waterproof)
+            water_level = getattr(world, 'water_level', None)
+            if water_level is None: water_level = world.water - 1
+            print 'Water level: {}, time_underwater: {}/{}'.format(
+                    water_level, world.time_underwater, world.waterproof)
         print
         
     commands = cleanup(initial_commands)

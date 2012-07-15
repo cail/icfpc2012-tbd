@@ -5,6 +5,6 @@ from test_emulators import World, VorberWorld, DictWorld
 #                , world_classes)
 
 map_name = 'flood1'
-path = run_interactively(DictWorld.from_file(official_map_file_name(map_name)))
-validate(map_name, path, world_classes)
+path = run_interactively(VorberWorld.from_file(official_map_file_name(map_name)))
+
 print 'yo'
