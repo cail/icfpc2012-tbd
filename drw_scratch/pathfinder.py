@@ -19,7 +19,7 @@ def plot_path(world, destination):
     f_score[start] = g_score[start] + distance(world, start, destination)
     
     while openset:
-        score, current = argmin(lambda point: f_score[point], openset)
+        _, current = argmin(lambda point: f_score[point], openset)
         if current == destination:
             return reconstruct_path(came_from, destination)
         openset.remove(current)
@@ -62,7 +62,7 @@ def reconstruct_path(came_from, destination):
 
 def path_to_commands(path):
     if path is None:
-        return None
+        return 'A'
     commands = []
     point = path[0]
     for next_point in path[1:]:

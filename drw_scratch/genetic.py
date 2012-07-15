@@ -64,6 +64,14 @@ def crossover(candidate1, candidate2):
         if len(offspring.actions) > 0:
             return offspring    
 
+def apply_commands(world, commands):
+    assert(not world.terminated)
+    for c in commands:
+        world = world.apply_command(c)
+        if world.terminated:
+            break
+    return world
+
 class GeneticSolver(object):
     def __init__(self, world):
         self.world = world
@@ -97,33 +105,23 @@ class GeneticSolver(object):
         world = World(self.world)
         world_hash = world.get_hash()
         for (wait, destination) in itertools.izip(candidate.waits, candidate.actions):
-            for _ in xrange(wait):
-                world = world.apply_command('W')
-                if world.terminated:
-                    return world.score
             if wait > 0:
-                world_hash = world.get_hash()
-            
-            cache_key = (world_hash, world.robot, destination)
-            if cache_key in self.cache:
-                cached = True
-                commands, world_hash = self.cache[cache_key]
-            else:
-                cached = False
-                commands = pathfinder.commands_to_reach(world, destination)
-            if commands == None:
-                world_hash = world.get_hash()
-                if not cached: self.cache[cache_key] = (commands, world_hash)
-                return world.score
-            for c in commands:
-                world = world.apply_command(c)
+                world = apply_commands(world, ('W' for _ in xrange(wait)))
                 if world.terminated:
-                    world_hash = world.get_hash()
-                    if not cached: self.cache[cache_key] = (commands, world_hash)
-                    return world.score
-            world_hash = world.get_hash()
-            if not cached: self.cache[cache_key] = (commands, world_hash)
-
+                    break
+                world_hash = world.get_hash()
+            cache_key = (world_hash, world.robot, destination)
+            cached = (cache_key in self.cache) 
+            if cached:
+                commands, world_hash = self.cache[cache_key]
+                world = apply_commands(world, commands)
+            else:
+                commands = pathfinder.commands_to_reach(world, destination)
+                world = apply_commands(world, commands)
+                world_hash = world.get_hash()
+                self.cache[cache_key] = (commands, world_hash)
+            if world.terminated:
+                break
         return world.score
     
     def compile(self, candidate):
@@ -136,9 +134,6 @@ class GeneticSolver(object):
                 if world.terminated:
                     return ''.join(compiled)
             commands = pathfinder.commands_to_reach(world, destination)
-            if commands == None:
-                compiled.append('A')
-                return ''.join(compiled)
             for c in commands:
                 compiled.append(c)
                 world = world.apply_command(c)
