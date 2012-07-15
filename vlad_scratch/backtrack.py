@@ -4,9 +4,7 @@ sys.path.append('../production') # for pypy
 from time import clock
 from itertools import *
 
-from dual_world import DualWorld
 from world import World
-from localvalidator import validate
 
 from preprocessor import preprocess_world
 from utils import path_to_nearest_lambda
@@ -67,7 +65,7 @@ def upper_bound(state):
         return 50*collectable_lambdas-state.time-max_dist
     
 
-def solve(state, time_limit=15):
+def solve(state, time_limit=5):
     
     start = clock()
     
@@ -170,16 +168,20 @@ def solve(state, time_limit=15):
         
 
 if __name__ == '__main__':
-    map_name = 'contest1'
-    map = World.from_file('../data/sample_maps/{}.map'.format(map_name))
-    #map.data = filter_walls(map.data) # minimize structures for cloning etc.
-    #print len(map.data), 'nonwall cells'
     
-    map.show()
+    from dual_world import DualWorld
+    from dict_world import DictWorld
+    from test_emulators import validate
+    
+    map_name = 'contest3'
+    map_path = '../data/sample_maps/{}.map'.format(map_name)
+    world = World.from_file(map_path)
+    
+    world.show()
     
     start = clock()
 
-    score, solution = solve(map)
+    score, solution = solve(world)
     
     print 'it took', clock()-start
 
@@ -187,7 +189,17 @@ if __name__ == '__main__':
     print score, solution
     
     print 'validating...',
-    validated_score, _ = validate(DualWorld, map_name, solution)
+    
+    world = DualWorld.from_file(map_path)
+    for cmd in solution:
+        world = world.apply_command(cmd)
+        if world.terminated:
+            break
+    validated_score = world.score
+    
     assert score == validated_score, (score, validated_score)
+    
+    validate(map_name, solution, World, DictWorld, DualWorld)
+    
     print 'ok'
     
