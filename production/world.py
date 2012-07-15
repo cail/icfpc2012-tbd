@@ -12,12 +12,12 @@ def find_single_item(data, value):
 class World(WorldBase):
     '''
     >>> world = World.from_file('../data/sample_maps/contest1.map')
-    >>> world.get_score_abort() # abort is part of public interface too!
+    >>> world.score # automatically decides which score to return
     0
     >>> for c in 'LDRDDULULLDDL':
-    ...     world, final_score = world.apply_command(c)
-    ...     if final_score is not None: break
-    >>> final_score
+    ...     world = world.apply_command(c)
+    ...     if world.terminated: break
+    >>> world.score
     212
     '''
     __slots__ = [
