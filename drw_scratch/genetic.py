@@ -105,7 +105,7 @@ class GeneticSolver(object):
         index = random.randrange(len(candidate))
         if mutation == 'insert_short_move':
             last_destination = None
-            for i in xrange(index - 1, -1):
+            for i in xrange(index - 1, -1, -1):
                 if candidate.genes[i][0] == 'move':
                     last_destination = candidate.genes[i][1]
                     break
@@ -199,14 +199,13 @@ class GeneticSolver(object):
         
         next_generation = []
         while len(next_generation) < POPULATION_SIZE:
-            parent1 = random_candidate.next()
-            parent2 = random_candidate.next()
-#            parent1 = random.choice(best)
-#            parent2 = random.choice(best)
+            #parent1 = random_candidate.next()
+            #parent2 = random_candidate.next()
+            parent1 = random.choice(best)
+            parent2 = random.choice(best)
             while parent2 != parent1:
-#                parent2 = random.choice(best)
-                parent2 = random_candidate.next()
-
+                parent2 = random.choice(best)
+#                parent2 = random_candidate.next()
             
             if random.random() < CROSSOVER_RATE:
                 child = crossover(parent1, parent2)
@@ -251,11 +250,11 @@ POPULATION_SIZE = 300
 SELECTED_FOR_BREEDING = 0.1
 CROSSOVER_RATE = 0.7
 MUTATION_RATE = 0.7
-MUTATION_ATTEMPTS = 4 # stir things up a bit
+MUTATION_ATTEMPTS = 15 # stir things up a bit
 LANDMARK_GENE_CHANCE = 0.3 # generates genes that makes us go to interesting places
 NUM_ELITE = 3 # top N candidates are copied to the new generation unchanged 
-MUTATIONS = [('insert_long_move', 10), ('insert_short_move', 5),\
-              ('insert_wait', 0), ('remove', 10),] # weighted mutations
+MUTATIONS = [('insert_long_move', 10), ('insert_short_move', 10),\
+              ('insert_wait', 5), ('remove', 20),] # weighted mutations
 SHORT_MOVE_DISTANCE = 3
 #SHORT_MOVE_CHANCE = 0.3
 
