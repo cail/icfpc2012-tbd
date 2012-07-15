@@ -5,11 +5,11 @@ sys.path.append('../production') # for pypy
 import logging
 
 from time import clock, sleep
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 from preprocessor import preprocess_world
 from upper_bound import upper_bound
-from utils import path_to_nearest_lambda_or_exit
+from utils import dist, path_to_nearest_lambda_or_lift
 
 
 class StopSearch(Exception):
@@ -74,7 +74,9 @@ class Solver(object):
         self.stats['preprocess'] += 1
         
         ub = upper_bound(preprocessed)
-        # TODO: aggressively preprocess here
+        
+        aggressive_preprocess(preprocessed) #inplace
+        
         key = preprocessed.get_hash()
         cache_entry = self.cache.get(key)
         if cache_entry is None:
@@ -121,7 +123,7 @@ class Solver(object):
         if cache_entry.command is not None:
             greedy_commands = [cache_entry.command]
         else:
-            ptn = path_to_nearest_lambda_or_exit(self.state)
+            ptn = path_to_nearest_lambda_or_lift(self.state)
             if ptn is not None:
                 assert len(ptn) > 0
                 greedy_commands = [ptn]
@@ -182,6 +184,36 @@ class Solver(object):
     def get_best(self):
         return self.best_score, self.best_solution.replace(' ', '')
     
+
+
+def aggressive_preprocess(world):
+    '''
+    inplace, because why not?
+    '''
+    #return
+
+    data = world.data
+    rx, ry = rxy = world.robot_coords
+    num_lambdas = 0
+    
+    sectors = [Counter() for _ in range(4)]
+    
+    for i in range(len(data)):
+        xy = world.index_to_coords(i)
+        if dist(rxy, xy) > 7:
+            if data[i] in '\\*':
+                x, y = xy
+                idx = 0
+                if x-rx > y-ry:
+                    idx += 1
+                if x-rx > ry-y:
+                    idx += 2
+                sectors[idx][data[i]] += 1
+            data[i] = '?'
+    for sector in sectors:
+        data.extend(sector.elements())
+
+
     
 def main():
     
@@ -194,7 +226,7 @@ def main():
     from test_emulators import validate
 
     
-    map_name = 'flood3'
+    map_name = 'contest10'
     map_path = '../data/sample_maps/{}.map'.format(map_name)
     world = World.from_file(map_path)
     
