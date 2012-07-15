@@ -6,14 +6,15 @@ from preprocessor_tests import reachability_tests, stone_reachability_tests
 
 
 
-def parse_test(s):
+def parse_result(s):
     lines = s.split('\n')
     assert lines[0] == ''
     del lines[0]
     assert all(len(lines[0]) == len(line) for line in lines)
     width = len(lines[0])
-    data = sum(map(list, lines), [])
-    return width, data
+    #data = sum(map(list, lines), [])
+    data = ['0']*(width+2) + [c for line in lines for c in '0'+line+'0'] + ['0']*(width+2)
+    return width+2, data
 
 
 def data_to_string(width, data):
@@ -29,17 +30,21 @@ def test_processing_step(tests, step, verbose=False):
         if verbose:
             print '-'*10
             print test
-        width, data = parse_test(test)
-        assert test == '\n'+data_to_string(width, data)
+        assert test.startswith('\n')
+        test = test[1:]
+        world = World.from_string(test)
+        width = world.width
+        data = world.data
         
         reachable = step(width, data)
         
         if verbose:
             print data_to_string(width, reachable)
         
-        w, expected = parse_test(result)
+        w, expected = parse_result(result)
         
         assert w == width
+        assert len(expected) == len(data), (len(expected), len(data))
         
         if expected != reachable:
             if not verbose:
