@@ -131,9 +131,8 @@ class DictWorld(WorldBase):
     def water_level(self):
         if self.flooding == 0:
             return 0
-        return self.water+(self.time-1)//self.flooding-1
+        return self.water + (self.time - 1)//self.flooding
         # time-1 because we check it in update
-        # -1 because our coords are zero-based
         
     def apply_command(self, c):
         '''
@@ -203,7 +202,7 @@ class DictWorld(WorldBase):
         
     def update(self):
         _, y = self.robot_coords
-        if y <= self.water_level:
+        if y < self.water_level:
             self.time_underwater += 1
             if self.time_underwater > self.waterproof:
                 self.dead = True

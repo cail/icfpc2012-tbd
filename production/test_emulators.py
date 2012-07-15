@@ -129,7 +129,12 @@ def validate_internal(map_data, commands, web_map_name, world_classes):
             if terminated and not_terminated:
                 if all(w.terminated for w in worlds): break
                 print 'Simulations diverge after {!r}'.format(commands)
+                print 'Previous state:'
+                print format_world_state(prev_world)
+                print
+                print 'Current state:'
                 print format_world_state(worlds[0])
+                print
                 print 'Terminated:', ', '.join(terminated)
                 print 'Not terminated:', ', '.join(not_terminated)
                 return False
