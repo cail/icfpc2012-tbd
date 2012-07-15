@@ -1,18 +1,6 @@
-
-import sys
-
-from webvalidator import validate
-
-score, map = validate('contest1', 'LDRDDULULLDDL')
-print score, '\n', map 
-sys.exit()
-
-
+def f(x, c = 1, *y):
+    print x, y, c
     
-#m = Map.load('test.map')
-#while not m.done:
-#    m.show()
-#    c = raw_input('>')
-#    print 'res:', m.execute(c.upper())
-#m.show()
-
+f(11)
+f(11, 12)
+f(11, 12, 13)

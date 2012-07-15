@@ -1,10 +1,12 @@
+import warnings
+
 
 def dist((x1, y1), (x2, y2)):
     return abs(x1-x2)+abs(y1-y2)
 
 
 
-def path_to_nearest_lambda(world):
+def path_to_nearest_lambda_or_exit(world):
     '''
     return path to nearest lambda or None
     '''
@@ -15,16 +17,23 @@ def path_to_nearest_lambda(world):
     visited = {world.robot: (-1, '*')}
     tasks = set([world.robot])
     
+    if world.collected_lambdas == world.total_lambdas:
+        if 'O' not in world.data:
+            warnings.warn('path to nearest lambda or exit: O not in data!')
+        goal = 'O'
+    else:
+        goal = '\\'
+    
     while tasks:
         new_tasks = set()
         for i in tasks:
             for dir, delta in dds:
                 j = i+delta
-                if data[j] in ' .' and j not in visited:
+                if data[j] in ' .!' and j not in visited:
                     visited[j] = i, dir
                     new_tasks.add(j)
                     
-                if data[j] == '\\':
+                if data[j] == goal:
                     path = [dir]
                     while i != -1:
                         i, dir = visited[i]
