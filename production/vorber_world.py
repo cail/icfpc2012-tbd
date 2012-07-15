@@ -154,7 +154,6 @@ class VorberWorld(WorldBase):
             self.set(x,y,VorberWorld.Open)
         if self.time % self.Growth == 0:
             if self.get(x,y) == VorberWorld.Beard:
-                print "GROWING BEARD!"
                 self.grow_beard(x-1,y-1)
                 self.grow_beard(x-1,y)
                 self.grow_beard(x-1,y+1)
