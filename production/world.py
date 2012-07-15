@@ -241,13 +241,6 @@ class World(WorldBase):
         return index % self.width-1, (len(self.data)-index-1)//self.width-1
     
     def coords_to_index(self, (x,reverse_y)):
-        #pprint.pprint(x)
-        #pprint.pprint(reverse_y)
-        h=(( len(self.data) / self.width ))
-        y=h-reverse_y
-        pprint.pprint(y*self.width)
-        #pprint.pprint(y)
-        #pprint.pprint(y*self.width)
         return ( (( len(self.data) / self.width ) - reverse_y) * self.width ) + x
     
     def __getitem__(self, (x, y)):
