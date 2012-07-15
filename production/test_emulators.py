@@ -156,15 +156,21 @@ def run_interactively(world, initial_commands=''):
     def cleanup(commands):
         return [c for c in commands.upper() if c in 'UDLRWA']
     def print_world(world):
-        robot = world.robot 
-        coords = world.index_to_coords(robot)
-        
+        if hasattr(world, 'robot'):
+            robot = world.robot 
+            coords = world.index_to_coords(robot)
+        elif hasattr(world, 'robot_coords'):
+            robot = '-' 
+            coords = world.robot_coords
+        elif hasattr(world, 'robot_x'):
+            robot = '-' 
+            coords = (world.robot_x, world.robot_y) 
+            
         print world.get_map_string()
-        print 'Time: {:>2}, Robot: x={}, y={}, idx={}'.format(world.time, coords[0], coords[1], robot)
+        print 'Time: {:>2}, Robot: x={}, y={}, idx={}'.format(world.time, coords[0] + 1, coords[1] + 1, robot)
         if world.flooding:
             print 'Water level: {}, underwater: {}/{}'.format(
-                    world.water_level(),
-                    world.underwater)
+                    world.water_level, world.underwater, world.waterproof)
         print
         
     commands = cleanup(initial_commands)
