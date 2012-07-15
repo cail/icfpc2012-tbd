@@ -193,6 +193,6 @@ if __name__ == '__main__':
 
     # uncomment to print detailed data including solutions
     
-    #import json
-    #print json.dumps(random_stats, indent=4, sort_keys = False)
-    #print json.dumps(predef_stats, indent=4, sort_keys = False)
+    import json
+    open("random_stats.json", "w").write(json.dumps(random_stats, indent=4, sort_keys = False))
+    open("predef_stats.json", "w").write(json.dumps(predef_stats, indent=4, sort_keys = False))
