@@ -27,23 +27,22 @@ def salesman_lower_bound_(world, need_exit=True):
     if world.collected_lambdas == world.total_lambdas:
         # go straight to exit
         #return dist(world.robot_coords, world.lift_coords)
-        _, path = next(e for goal in 'OL' for e in 
-                       enumerate_paths_to_goals(world,
+        _, path = next(enumerate_paths_to_goals(world,
                                                 start=world.robot,
                                                 walkable=walkable,
-                                                goal=goal))
+                                                goals='OL'))
         return len(path)
     max_dist = 0
     for idx, path in enumerate_paths_to_goals(world, 
                                               start=world.robot, 
                                               walkable=walkable,
-                                              goal='\\'):
+                                              goals='\\'):
         d1 = len(path)
         if need_exit:
             _, path2 = next(enumerate_paths_to_goals(world,
                                                      start=idx,
                                                      walkable=walkable,
-                                                     goal='L'))
+                                                     goals='L'))
             d2 = len(path2)
         else:
             path2 = ''
@@ -63,18 +62,17 @@ def salesman_lower_bound(world, need_exit=True):
     if world.collected_lambdas == world.total_lambdas:
         # go straight to exit
         #return dist(world.robot_coords, world.lift_coords)
-        _, path = next(e for goal in 'OL' for e in 
-                       enumerate_paths_to_goals(world,
+        _, path = next(enumerate_paths_to_goals(world,
                                                 start=world.robot,
                                                 walkable=walkable,
-                                                goal=goal))
+                                                goals='OL'))
         return len(path)
     
     dists1 = {}
     for idx, path in enumerate_paths_to_goals(world, 
                                               start=world.robot, 
                                               walkable=walkable,
-                                              goal='\\'):
+                                              goals='\\'):
         #print idx, path
         dists1[idx] = len(path)
         
@@ -83,7 +81,7 @@ def salesman_lower_bound(world, need_exit=True):
         for idx, path in enumerate_paths_to_goals(world, 
                                                   start=world.lift, 
                                                   walkable=walkable,
-                                                  goal='\\'):
+                                                  goals='\\'):
             dists2[idx] = len(path)
             
         assert set(dists1.keys()) == set(dists2.keys())

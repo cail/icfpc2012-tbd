@@ -5,7 +5,7 @@ def dist((x1, y1), (x2, y2)):
     return abs(x1-x2)+abs(y1-y2)
 
 
-def enumerate_paths_to_goals(world, start, walkable, goal):
+def enumerate_paths_to_goals(world, start, walkable, goals):
     '''
     yield (goal_index, paths) as strings
     
@@ -30,7 +30,7 @@ def enumerate_paths_to_goals(world, start, walkable, goal):
                     visited[j] = i, dir
                     new_tasks.add(j)
                     
-                if data[j] == goal and j not in yielded:
+                if data[j] in goals and j not in yielded:
                     yielded.add(j)
                     path = [dir]
                     k = i
@@ -57,7 +57,7 @@ def path_to_nearest_lambda_or_lift(world):
     else:
         goal = '\\'
     
-    result= next(enumerate_paths_to_goals(world, start=world.robot, walkable=' .!\\', goal=goal),
+    result= next(enumerate_paths_to_goals(world, start=world.robot, walkable=' .!\\', goals=goal),
                  None)
     if result is not None:
         _, path = result
