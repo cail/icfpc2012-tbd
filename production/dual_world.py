@@ -1,9 +1,8 @@
 from world_base import WorldBase
 
-
-def assert_eq(a, b):
-    assert a == b, (a, b)
-    
+# Dirty hack to prevent DualWorld from shitting all over everything when run
+# under test_emulators.
+suppress_errors = False
 
 class DualWorld(WorldBase):
     def __init__(self, w1, w2):
@@ -13,13 +12,18 @@ class DualWorld(WorldBase):
         s1 = w1.get_map_string()
         s2 = w2.get_map_string()
         if s1 != s2:
-            self.error = 'simulation diverged!!'
-            print 'simulation diverged!!!!!'
-            print s1
-            print '---'
-            print s2
-            print '---'
-            #assert False
+            self.error = 'DualWorld detected diverging simulation'
+            if not suppress_errors:
+                print 'simulation diverged!!!!!'
+                print s1
+                print '---'
+                print s2
+                print '---'
+                assert False
+
+    def assert_eq(self, a, b):
+        if not suppress_errors:
+            assert a == b, (a, b)
         
     @staticmethod
     def from_string(s):
@@ -43,7 +47,7 @@ class DualWorld(WorldBase):
     
     def get_map_string(self):
         result = self.w1.get_map_string()
-        assert_eq(result, self.w2.get_map_string())
+        self.assert_eq(result, self.w2.get_map_string())
         return result
     
     def show(self):
@@ -54,13 +58,13 @@ class DualWorld(WorldBase):
     @property
     def terminated(self):
         result = self.w1.terminated
-        assert_eq(result, self.w2.terminated)
+        self.assert_eq(result, self.w2.terminated)
         return result
 
     @property
     def score(self):
         result = self.w1.score
-        assert_eq(result, self.w2.score)
+        self.assert_eq(result, self.w2.score)
         return result
     
     ##### data access interface
@@ -68,41 +72,41 @@ class DualWorld(WorldBase):
     @property
     def time(self):
         result = self.w1.time
-        assert_eq(result, self.w2.time)
+        self.assert_eq(result, self.w2.time)
         return result
     
     @property
     def total_lambdas(self):
         result = self.w1.total_lambdas
-        assert_eq(result, self.w2.total_lambdas)
+        self.assert_eq(result, self.w2.total_lambdas)
         return result
     
     @property
     def collected_lambdas(self):
         result = self.w1.collected_lambdas
-        assert_eq(result, self.w2.collected_lambdas)
+        self.assert_eq(result, self.w2.collected_lambdas)
         return result
         
     @property
     def robot_coords(self):
         result = self.w1.robot_coords
-        assert_eq(result, self.w2.robot_coords)
+        self.assert_eq(result, self.w2.robot_coords)
         return result
     
     @property
     def lift_coords(self):
         result = self.w1.lift_coords
-        assert_eq(result, self.w2.lift_coords)
+        self.assert_eq(result, self.w2.lift_coords)
         return result
     
     def __getitem__(self, coords):
         result = self.w1[coords]
-        assert_eq(result, self.w2[coords])
+        self.assert_eq(result, self.w2[coords])
         return result
     
     def enumerate_lambdas(self):
         result = set(self.w1.enumerate_lambdas())
-        assert_eq(result, set(self.w2.enumerate_lambdas()))
+        self.assert_eq(result, set(self.w2.enumerate_lambdas()))
         return result
     
     
