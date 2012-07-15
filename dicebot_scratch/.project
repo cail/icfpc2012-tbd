@@ -3,6 +3,7 @@
 	<name>dicebot_scratch</name>
 	<comment></comment>
 	<projects>
+		<project>drw_scratch</project>
 		<project>production</project>
 		<project>vlad_scratch</project>
 	</projects>

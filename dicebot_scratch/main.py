@@ -41,7 +41,8 @@ from itertools import chain
 default_interpreter = emulator.interpret
 
 # check solver.py for available ones
-solver_list = [ solvers.fuzz_solver(), solvers.vlad_solver() ]
+solver_list = [ solvers.fuzz_solver(), solvers.vlad_solver(),
+                solvers.drw_solver(), solvers.predefined_solver() ]
 
 # used in random-based map generators 
 worlds.print_generated_maps = True
@@ -49,16 +50,16 @@ worlds.print_generated_maps = True
 # END OF SETTINGS
 
 # utility function to run any one test and store needed metrics
-def run_test(world_text, solver, interpretator):
+def run_test(world, solver, interpretator):
     time1 = time.time()
-    commands = solver.solve(world_text)
+    commands = solver.solve(world['source'], world['name'])
     time_taken = time.time() - time1
-    score = interpretator(world_text, commands)
+    score = interpretator(world['source'], commands)
     
     return { 
             'score' : score,
             'time' : '{:f}'.format(time_taken),
-            'solution_length' : len(commands),
+            'solution_length' : len(commands) if commands else None,
             'solution' : commands
             }
 
@@ -73,7 +74,7 @@ def test_world_list(worlds):
 #                'source' : world['source']
             },
             'stats_per_solver' : { solver.name : 
-                run_test(world['source'], solver, default_interpreter) for solver in solver_list 
+                run_test(world, solver, default_interpreter) for solver in solver_list 
             }
         }
     return results
@@ -95,13 +96,13 @@ def test_all_official():
     
 def test_basic_official():
     return test_world_list(worlds.load_official_basic_worlds())
+
+def test_flood_official():
+    return test_world_list(worlds.load_official_flood_worlds())
     
-def test_all():
-    return test_world_list(chain( 
-       worlds.create_some_random(amount = 3, height = 4, width = 5),
-       worlds.load_official_worlds(),
-       worlds.load_our_worlds()
-    ))
+def test_out_worlds():
+    return test_world_list(worlds.load_our_worlds())    
+    
     
 '''
 Pretty visualizer
@@ -126,10 +127,15 @@ def print_as_table(stats):
         
     
 if __name__ == '__main__':
-    random.seed(42)
-    #stats = test_fuzzy(2, max_width = 20, max_height = 30, with_water = True)
-    #stats = test_fuzzy(1, max_width = 5, max_height = 5, with_water = False)
-    #stats = test_all_official()
-    stats = test_basic_official()
+    import sys
+    seed = random.randint(0, sys.maxint)
+    print 'Using seed', seed 
+    random.seed(seed)    
+    stats = chain( 
+        test_fuzzy(2, max_width = 20, max_height = 30, with_water = True),
+        test_basic_official(),
+        test_flood_official(),
+        test_out_worlds()
+    )
     print_as_table(stats)
     #print json.dumps(stats, indent=4, sort_keys = False)

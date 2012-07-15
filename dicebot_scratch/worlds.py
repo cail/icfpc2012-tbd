@@ -93,6 +93,14 @@ def load_official_worlds():
 def load_official_basic_worlds():
     return [ world for world in load_from_folder(official_worlds_folder)
             if world['name'].startswith('contest') ]
+    
+def load_official_flood_worlds():
+    return [ world for world in load_from_folder(official_worlds_folder)
+            if world['name'].startswith('flood') ]    
+    
+def load_official_portal_worlds():
+    return [ world for world in load_from_folder(official_worlds_folder)
+            if world['name'].startswith('trampoline') ]    
 
 def load_our_worlds():
     return load_from_folder(our_custom_world_folder)

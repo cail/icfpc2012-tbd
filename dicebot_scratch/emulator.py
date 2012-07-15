@@ -3,6 +3,8 @@ import dict_world
 import world 
 
 def interpret_impl(world_string, commands, instance):
+    if commands == None:
+        return None
     if commands == '':
         commands = 'A'
     for cmd in commands:
@@ -18,7 +20,15 @@ def interpret(world_string, commands):
     instance1 = dict_world.DictWorld.from_string(world_string)
     instance2 = world.World.from_string(world_string)
     instance_dual = dual_world.DualWorld(instance1, instance2)
-    return interpret_impl(world_string, commands, instance_dual)
+    try:
+        return interpret_impl(world_string, commands, instance_dual)
+    except AssertionError:        
+        print 'Commands: ', commands
+        print 'Map: '
+        print '_____'
+        print world_string
+        print '-----'
+        raise
 
 def interpret_dict(world_string, commands):
     return interpret_impl(world_string, commands,
