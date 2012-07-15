@@ -1,6 +1,17 @@
 from world_base import WorldBase
 class VorberWorld(WorldBase):
-    Empty, Earth, Wall, Lambda, Rock, Open, Closed, Robot = range(8)
+    Empty = " "
+    Earth = "."
+    Wall = "#"
+    Lambda = "\\"
+    Rock = "*"
+    Open = "O"
+    Closed = "L"
+    Robot = "R"
+    Beard = "W"
+    Razor = "!"
+    Trampoline = "ABCDEFGHI"
+    TrampExit = "123456789"
 
     #interface stuff:
     @staticmethod
@@ -12,7 +23,8 @@ class VorberWorld(WorldBase):
         for l in range(self.height):
             i = self.height - l - 1
             line = self.world[i*self.width:(i+1)*self.width]
-            s = map(VorberWorld.elementToChar, line)
+            #s = map(VorberWorld.elementToChar, line)
+            s = line
             s+="\n"
             a += s
         res = "".join(a[:-1])
@@ -40,29 +52,6 @@ class VorberWorld(WorldBase):
         return self
 
     #end interface stuff
-    @staticmethod
-    def charToElement(c):
-        if c == ' ': return VorberWorld.Empty
-        if c == '.': return VorberWorld.Earth
-        if c == '#': return VorberWorld.Wall
-        if c == '\\' or c == '`': return VorberWorld.Lambda
-        if c == '*': return VorberWorld.Rock
-        if c == 'O': return VorberWorld.Open
-        if c == 'L': return VorberWorld.Closed
-        if c == 'R': return VorberWorld.Robot
-        return None
-
-    @staticmethod
-    def elementToChar(c):
-        if c == VorberWorld.Empty: return ' '
-        if c == VorberWorld.Earth: return '.'
-        if c == VorberWorld.Wall: return '#'
-        if c == VorberWorld.Lambda: return '\\'
-        if c == VorberWorld.Rock: return '*'
-        if c == VorberWorld.Open: return 'O'
-        if c == VorberWorld.Closed: return 'L'
-        if c == VorberWorld.Robot: return 'R'
-        return None
 
     def __init__(self, ss):
         s, _, metadata = ss.partition("\n\n")
@@ -71,10 +60,10 @@ class VorberWorld(WorldBase):
             lines = lines[:-1]
         self.height = len(lines)
         self.time_underwater = 0
-        elines = [map(VorberWorld.charToElement,l) for l in lines][::-1]
+        elines = lines[::-1]
         self.width = max(map(len, elines))
-        elines = map(lambda l:l+map(VorberWorld.charToElement,(self.width-len(l))*" "), elines)
-        self.world = reduce(lambda a,b:a+b, elines)
+        elines = map(lambda l:l+(self.width-len(l))*" ", elines)
+        self.world = list(reduce(lambda a,b:a+b, elines))
         self.height = len(elines)
         self.width = max(map(len, elines))
         self.lambda_count = reduce(lambda a,b: a+b,  map(lambda e: 1 if e == VorberWorld.Lambda else 0, self.world))
@@ -99,6 +88,8 @@ class VorberWorld(WorldBase):
         self.Water = int(metadict.get("Water", 0))
         self.Flooding = int(metadict.get("Flooding", 0))
         self.Waterproof = int(metadict.get("Waterproof", 0))
+        self.Growth = int(metadict.get("Growth", 25))
+        self.Razors = int(metadict.get("Razors", 0))
 
     def __repr__(self):
         res = "VorberWorld\n"
@@ -107,7 +98,8 @@ class VorberWorld(WorldBase):
         res += "Turn: " + str(self.time) + "\n"
         res += "Water level: " + str(self.Water) + "\n"
         res += "flood timer: " + str(self.flood_timer) + "\n"
-        res += "time under water: " + str(self.time_underwater)
+        res += "time underwater: " + str(self.time_underwater) + "\n"
+        res += "Razors: " + str(self.Razors) + "\n"
         return res
 
     def check_range(self, x, y):
@@ -139,6 +131,12 @@ class VorberWorld(WorldBase):
         self.world[y*self.width + x] = value
         self.new_world[y*self.width + x] = value
 
+    def grow_beard(self, x, y):
+        if self.check_range(x,y) and self.get(x,y) == VorberWorld.Empty:
+            self.set(x,y,VorberWorld.Beard)
+        else:
+            print x, y, "onoes", self.get(x,y)
+
     def update_cell(self, x, y):
         if self.get(x,y) == VorberWorld.Rock and self.get(x, y-1) == VorberWorld.Empty:
             self.set(x, y, VorberWorld.Empty)
@@ -154,6 +152,18 @@ class VorberWorld(WorldBase):
                self.set(x+1,y-1, VorberWorld.Rock)
         if self.get(x,y) == VorberWorld.Closed and self.lambda_count == 0:
             self.set(x,y,VorberWorld.Open)
+        if self.time % self.Growth == 0:
+            if self.get(x,y) == VorberWorld.Beard:
+                print "GROWING BEARD!"
+                self.grow_beard(x-1,y-1)
+                self.grow_beard(x-1,y)
+                self.grow_beard(x-1,y+1)
+                self.grow_beard(x,y-1)
+                self.grow_beard(x,y)
+                self.grow_beard(x,y+1)
+                self.grow_beard(x+1,y-1)
+                self.grow_beard(x+1,y)
+                self.grow_beard(x+1,y+1)
 
 
     def check_dead(self):
@@ -209,7 +219,7 @@ class VorberWorld(WorldBase):
         if abs(old_x - new_x) + abs(old_y - new_y) == 1:
 
             tv = self.get(new_x, new_y)
-            if tv in [VorberWorld.Empty, VorberWorld.Earth, VorberWorld.Lambda, VorberWorld.Open, VorberWorld.Closed]:
+            if tv in [VorberWorld.Empty, VorberWorld.Earth, VorberWorld.Lambda, VorberWorld.Open, VorberWorld.Closed] or (tv == VorberWorld.Beard and self.Razors > 0):
                 if tv == VorberWorld.Lambda:
                     self.lambda_count -= 1
                     self.collected_lambdas+= 1
@@ -219,6 +229,9 @@ class VorberWorld(WorldBase):
                     self.robot_y = new_y
                     self.set_in_world(old_x, old_y, VorberWorld.Empty)
                     return
+                if tv == VorberWorld.Beard:
+                    self.Razors -= 1
+
                 self.robot_x = new_x
                 self.robot_y = new_y
                 self.set_in_world(new_x, new_y, VorberWorld.Robot)
@@ -261,7 +274,7 @@ class VorberWorld(WorldBase):
         return self.score
 
 if __name__ == "__main__":
-    mmap = VorberWorld.from_file("../data/sample_maps/flood1.map")
+    mmap = VorberWorld.from_file("../vorber_scratch/beard.map")
     route = "WWWWWWWWWWWWWWWWWWWLLLUUUUUULLLLLLLLLRRRRRRRRRRRR"
     interactive = True
     if interactive:
