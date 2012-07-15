@@ -2,6 +2,7 @@ import random
 import itertools
 import sys
 import time
+import bisect
 
 from world import World
 import pathfinder
@@ -10,12 +11,9 @@ import pathfinder
 # - add/remove waits between actions
 # - add/remove action
 
-
 # will need primitives for pushing boulders
 # (treating a boulder like an empty destination 
 # space does nothing more often than not)
-
-# TODO: some kind of caching for paths
 
 class Candidate(object):
     __slots__ = [
@@ -30,27 +28,23 @@ class Candidate(object):
             self.actions = []
         self.waits = [0] * len(self.actions)
         
-    def mutate_wait(self):
-        index = random.randrange(len(self.waits))
-        new_value = self.waits[index] + random.choice([+1, -1])
-        if new_value < 0: new_value = 1
-        self.waits[index] = new_value
-    
-    def mutate_insert(self, destination):
-        index = random.randrange(len(self.actions))
+    def insert(self, index, destination):
         self.actions.insert(index, destination)
         self.waits.insert(index, 0)
     
-    def mutate_remove(self):
+    def remove(self, index):
         index = random.randrange(len(self.actions))
         self.actions.pop(index)
         self.waits.pop(index)
-    
+
     def copy(self):
         new_instance = Candidate()
         new_instance.actions = self.actions[:]
         new_instance.waits = self.waits[:]
         return new_instance
+    
+    def __len__(self):
+        return len(self.actions)
         
         
 def crossover(candidate1, candidate2):
@@ -72,19 +66,44 @@ def apply_commands(world, commands):
             break
     return world
 
+class WeightedRandomGenerator(object):
+    def __init__(self, pairs):
+        self.elements, weights = zip(*pairs) 
+        self.totals = []
+        running_total = 0
+
+        for w in weights:
+            running_total += w
+            self.totals.append(running_total)
+
+    def next(self):
+        rnd = random.random() * self.totals[-1]
+        return self.elements[bisect.bisect_right(self.totals, rnd)]
+
+    def __call__(self):
+        return self.next()
+
 class GeneticSolver(object):
     def __init__(self, world):
         self.world = world
-        self.landmarks = [i for i, c in enumerate(world.data) if c in '\L'] # no trampolines
+        landmark_symbols = ['\\', 'L'] + map(chr, range(ord('A'), ord('A')+9))
+        self.landmarks = [i for i, c in enumerate(world.data) if c in landmark_symbols]
         
         self.cache = {}
+        self.mutations_generator = WeightedRandomGenerator(MUTATIONS)
 
-    def random_destination(self):
+    def random_destination(self, near=None):
         while True:
-            if random.random() < LANDMARK_GENE_CHANCE:
-                i = random.choice(self.landmarks)
+            if near is None:
+                if random.random() < LANDMARK_GENE_CHANCE:
+                    i = random.choice(self.landmarks)
+                else:
+                    i = random.randrange(len(self.world.data))
             else:
+                # Warning: this could conceivably go into infinite loop
                 i = random.randrange(len(self.world.data))
+                if pathfinder.distance(self.world, i, near) > SHORT_MOVE_DISTANCE:
+                    continue
             if self.world.data[i] != '#':
                 return i
         
@@ -92,13 +111,29 @@ class GeneticSolver(object):
         return Candidate([self.random_destination() for _ in xrange(length)])
     
     def mutate(self, candidate):
-        r = random.random()
-        if r < 0.5 if len(candidate.actions) > 1 else 0.75: # quick fix to avoid empty candidates
-            candidate.mutate_insert(self.random_destination())
-        elif r > 0.75:
-            candidate.mutate_wait()
+        mutation = self.mutations_generator.next()
+        if len(candidate) == 1:
+            while mutation == 'remove':
+                mutation = self.mutations_generator.next()
+                
+        index = random.randrange(len(candidate))
+        if mutation == 'insert':
+            if random.random() < SHORT_MOVE_CHANCE:
+                last_destination = candidate.actions[index - 1] \
+                    if index > 0 else self.world.robot  
+                candidate.insert(index, self.random_destination(near=last_destination))
+            else:
+                candidate.insert(index, self.random_destination())
+        elif mutation == 'wait':
+            new_value = candidate.waits[index] + random.choice([+1, -1])
+            if new_value < 0: new_value = 1
+            candidate.waits[index] = new_value
+        elif mutation == 'remove':
+            candidate.remove(index)
+        elif mutation == 'fuzz':
+            assert False
         else:
-            candidate.mutate_remove()
+            assert False, 'Mutation not implemented: %s' % mutation
         return candidate
 
     def fitness(self, candidate):
@@ -152,11 +187,11 @@ class GeneticSolver(object):
     
     def step(self, population):
         scores, candidates = self.evaluate_and_sort(population)
-        print 'Fitness: max %d, average %d' % (scores[0], sum(scores)/float(len(scores)))
+#        print 'Fitness: max %d, average %d' % (scores[0], sum(scores)/float(len(scores)))
         
         best = candidates[:int(POPULATION_SIZE * SELECTED_FOR_BREEDING)]
-        
-        golden = [candidate.copy() for candidate in best[:3]]
+        golden = [candidate.copy() for candidate in candidates[:NUM_GOLDEN]]
+        leader = candidates[0].copy()
         
         next_generation = []
         while len(next_generation) < POPULATION_SIZE:
@@ -176,19 +211,33 @@ class GeneticSolver(object):
             next_generation.append(child)
         
         next_generation.extend(golden)
-        return next_generation
+        return (next_generation, leader)
     
-    def solve(self, timeout):
-        population = [self.generate_candidate(3) for _ in xrange(POPULATION_SIZE)]
+    def solve(self, timeout, local_timeout=10):
         start_time = time.time()
-        while True:
-            population = self.step(population)
-            if time.time() - start_time > timeout:
-                break
-
-        _, candidates = self.evaluate_and_sort(population)
-        leader = candidates[0]
-        return self.compile(leader)
+        timed_out = False
+        best_leader, best_leader_score = None, None
+        while not timed_out:
+            population = [self.generate_candidate(3) for _ in xrange(POPULATION_SIZE)]
+            last_improvement_time = start_time
+            previous_iteration_score = None
+            for i in itertools.count():
+                (population, leader) = self.step(population)
+                leader_score = self.fitness(leader)
+                if (previous_iteration_score is None) or (leader_score > previous_iteration_score):
+                    last_improvement_time = time.time()
+                previous_iteration_score = leader_score 
+                print "Iteration %d: %d" % (i, leader_score)
+                if time.time() - start_time > timeout:
+                    timed_out = True
+                    break
+                if time.time() - last_improvement_time > local_timeout:
+                    break
+            if (best_leader is None) or (leader_score > best_leader_score):
+                print "New global best: %d" % leader_score
+                best_leader = leader
+                best_leader_score = leader_score
+        return self.compile(best_leader)
 
 
 POPULATION_SIZE = 300
@@ -197,6 +246,10 @@ CROSSOVER_RATE = 0.7
 MUTATION_RATE = 0.7
 MUTATION_ATTEMPTS = 4 # stir things up a bit
 LANDMARK_GENE_CHANCE = 0.3 # generates genes that makes us go to interesting places
+NUM_GOLDEN = 3 # top N candidates are copied to the new generation unchanged 
+MUTATIONS = [('insert', 2), ('wait', 2), ('remove', 2), ('fuzz', 0)] # weighted mutations
+SHORT_MOVE_DISTANCE = 3
+SHORT_MOVE_CHANCE = 0.5
 
 if __name__ == '__main__':
     timeout = 20
