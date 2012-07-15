@@ -93,7 +93,17 @@ class World(WorldBase):
         world.time = 0
         world.final_score = None
         
-        metadict = dict(line.split(' ', 1) for line in metadata.split('\n') if line)
+        trampoline_targets = {}
+        metadict = {}
+        for key, value in (line.split(' ', 1) for line in metadata.split('\n') if line):
+            if key.upper() == 'TRAMPOLINE':
+                src, _, trg = value.partition(' targets ')
+                src, trg = [s.strip().upper() for s in (src, trg)]
+                assert src and trg
+                trampoline_targets[src] = trg
+            else:
+                metadict[key] = value
+            
         world.water = int(metadict.get('Water', 0))
         world.flooding = int(metadict.get('Flooding', 0))
         world.waterproof = int(metadict.get('Waterproof', 10))
@@ -179,7 +189,14 @@ class World(WorldBase):
             new_world.data = new_data = new_data[:]
             new_world.robot = new_robot
             
-        for i in xrange(len(data) / width - 2, 0, -1):
+        if new_robot >= len(data) - width * (new_world.water_level + 1):
+            new_world.time_underwater += 1
+            if new_world.time_underwater > new_world.waterproof:
+                new_world.final_score = new_world.get_score_lose()
+        else:
+            new_world.time_underwater = 0
+            
+        for i in reversed(xrange(1, len(data) / width - 1)):
             offset = i * width
             for offset in xrange(offset + 1, offset + width - 1):
                 cell = data[offset]
@@ -209,12 +226,6 @@ class World(WorldBase):
                             if offset_below + width + 1 == new_robot:
                                 new_world.final_score = new_world.get_score_lose()
                                 
-        if new_robot >= len(data) - width * (new_world.water_level + 1):
-            new_world.time_underwater += 1
-            if new_world.time_underwater > new_world.waterproof:
-                new_world.final_score = new_world.get_score_lose() 
-        else:
-            new_world.time_underwater = 0
 
         return new_world
      

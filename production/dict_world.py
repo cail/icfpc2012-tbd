@@ -29,7 +29,7 @@ class DictWorld(WorldBase):
         'water',
         'flooding',
         'waterproof',
-        'time_underwater', # time spend time_underwater
+        'time_underwater', # time spend underwater
     ]
     
     #### World interface, kind of

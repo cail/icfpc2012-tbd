@@ -2,6 +2,8 @@ from collections import defaultdict
 import webvalidator
 import re
 import dual_world
+import time
+from os import path as os_path
 
 tests = [
     ('contest1', 'LDRDDULULLDD'), # almost complete solution
@@ -33,6 +35,8 @@ tests = [
     
     ('flood1', 'LLLLLLDDDRUWWWWWWWWWWWWWWWWWWWWWWWWWWL'), # drowning happens after the update     
     ('flood1', 'LLLLLLDDDRUWWWWWWWWWWWWWWWWWWWWWWWWWWD'), # update doesn't prevent drowning
+
+    ('../data/maps_manual/push2.map', 'LLWDDLWDWDWDDLLUURLRRUUUUUULLLLLLLLRRRRRRRRRRR')
     
     # Pls add your own tests everyone, especially for interesting cases
     ]
@@ -121,6 +125,7 @@ def validate_internal(map_data, commands, web_map_name, world_classes):
         
         for i, c in enumerate(commands):
             prev_world = worlds[0]
+            _ = [world.apply_command(c) for world in worlds]
             worlds = [world.apply_command(c) for world in worlds]
             if not check_worlds(worlds, commands[:i+1], prev_world): return False
             terminated, not_terminated = [], []
@@ -154,9 +159,10 @@ def run_all_tests(world_classes):
     failed_tests = 0
     for i, (map_name, commands) in enumerate(tests):
         print '{}/{} {} {}'.format(i + 1, total_tests, map_name, commands)
-        if not validate(map_name, commands, world_classes):
+        if not (validate_custom(map_name, commands, world_classes)
+                if map_name.startswith('..') else
+                validate(map_name, commands, world_classes)):
             failed_tests += 1
-            break;
     if not failed_tests:
         print 'All tests pass!'
         return True
@@ -202,6 +208,33 @@ def run_interactively(world, initial_commands=''):
     print "Score:", world.score
     print "Commands:", executed_commands 
     return executed_commands
+
+def time_execution(world, instantiated_tests, chunk_size=100):
+    '''returns average apply_command iterations per second'''
+    start_time = time.time()
+    score = 0
+    command_cnt = 0
+    for _ in xrange(10000):
+        for _ in xrange(chunk_size):
+            for world, commands in instantiated_tests:
+                for c in commands:
+                    world = world.apply_command(c)
+                score += world.score
+                command_cnt += len(commands)
+        delta = time.time() - start_time
+        if delta > 1:
+            return command_cnt / delta
+
+def time_execution_print(world_class, test_suite, chunk_size=100):
+    instantiated_tests = []
+    for map_name, commands in test_suite:
+        if not os_path.isfile(map_name):
+            map_name = official_map_file_name(map_name)
+        world = world_class.from_file(map_name)
+        instantiated_tests.append((world, commands))
+    ips = time_execution(world, instantiated_tests, chunk_size)
+    print '{}: {:0.1f} iterations per second'.format(world_class.__name__, ips)
+    
                        
 if __name__ == '__main__':
     run_all_tests(world_classes)

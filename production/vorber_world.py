@@ -285,7 +285,7 @@ class VorberWorld(WorldBase):
                 self.robot_y = new_y
                 self.set_in_world(new_x, new_y, VorberWorld.Robot)
                 self.set_in_world(old_x, old_y, VorberWorld.Empty)
-            if tv in VorberWorld.Trampoline:
+            if tv is not None and tv in VorberWorld.Trampoline:
                 dest = self.trampolines[tv]
                 print "dest: ", dest
                 idx = self.new_world.index(dest)
