@@ -1,8 +1,5 @@
 from world import World
 
-from reachability_tests import reachability_tests
-from stone_reachability_tests import stone_reachability_tests
-
 
 def reachability_step(width, data):
     '''
@@ -72,7 +69,7 @@ def reachability_step(width, data):
     return reachable
 
 
-def stone_reachability_step(width, data):
+def stone_reachability_step_(width, data):
     '''
     Overapproximate set of places where can possibly be a stone
     '''
@@ -108,30 +105,41 @@ def stone_reachability_step(width, data):
     return result
 
 
-def preprocess(width, data):
-
+def stone_reachability_step(width, data):
+    '''
+    Overapproximate set of places where can possibly be a stone
+    '''
     
-    result = data[:]
-    reachable = reachability_step(width, data)
+    r = [False]*len(data)
     
-    for i in range(width, len(data)):
-        if not reachable[i]:
-            cell = result[i]
+    for i in range(width, len(data)-width, width):
+        for j in range(i, i+width):
+            cell = data[j]
             if cell == '*':
-                result[i] = '^'
-            elif cell not in 'LO':
-                result[i] = '#'
+                r[j] = True
+                if data[j-1] == 'R' and data[j+1] == ' ':
+                    r[j+1] = True
+                if data[j+1] == 'R' and data[j-1] == ' ':
+                    r[j-1] = True
+            if cell not in '#^LO' and \
+               (r[j-width-1] or r[j-width] or r[j-width+1]):
+                r[j] = True
+            
+        # push to the right
+        for j in range(i, i+width):
+            if r[j] and not r[j+1] and \
+               data[j-1] not in '#^' and \
+               data[j+width] not in 'R ' and data[j+1] not in '#^LO':
+                r[j+1] = True
                 
-    stone_reachable = stone_reachability_step(width, result)
-    for i in range(width, len(data)):
-        if not stone_reachable[i-width]:
-            cell = result[i]
-            if cell == '^':
-                result[i] = '#'
-            elif cell == '.':
-                result[i] = ' '
-                
-    return result
+        # push to the left
+        for j in range(i+width-1, i-1, -1):
+            if r[j] and not r[j-1] and \
+               data[j+1] not in '#^' and \
+               data[j+width] not in 'R ' and data[j-1] not in '#^LO':
+                r[j-1] = True
+    
+    return r
 
 
 def preprocess_world(world):
@@ -178,62 +186,3 @@ def preprocess_world(world):
                 data[i] = ' '
                 
     return world
-
-
-def parse_test(s):
-    lines = s.split('\n')
-    assert lines[0] == ''
-    del lines[0]
-    assert all(len(lines[0]) == len(line) for line in lines)
-    width = len(lines[0])
-    data = sum(map(list, lines), [])
-    return width, data
-
-
-def data_to_string(width, data):
-    lines = []
-    for i in range(0, len(data), width):
-        lines.append(''.join(data[i:i+width]))
-    return '\n'.join(lines)
-
-   
-def test_processing_step(tests, step):
-    fails = 0
-    for test, result in tests:
-        print '-'*10
-        print test
-        width, data = parse_test(test)
-        assert test == '\n'+data_to_string(width, data)
-        
-        
-        reachable = step(width, data)
-        
-        print data_to_string(width, reachable)
-        
-        _, expected = parse_test(result)
-        
-        if expected != reachable:
-            print 'fail, expected'
-            print data_to_string(width, expected)
-            fails += 1
-            
-    print '='*20
-    print fails, 'fails'
-    return fails
-            
-            
-if __name__ == '__main__':
-    
-    def bool_to_01(b):
-        return {False:'0', True:'1'}[b]
-    def bool_step_to_01(step):
-        return lambda w, h: map(bool_to_01, step(w, h))
-    
-    fails = 0
-    fails += test_processing_step(reachability_tests, bool_step_to_01(reachability_step))
-    
-    #fails += test_processing_step(stone_reachability_tests, bool_step_to_01(stone_reachability_step))
-    # because currently imprecise (but correct version) is used
-    
-    print '/'*30
-    print fails, 'fails total'
