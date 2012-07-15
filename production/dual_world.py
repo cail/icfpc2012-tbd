@@ -46,6 +46,19 @@ class DualWorld(WorldBase):
         print self.get_map_string()
         print '(simulated by both {} and {})'.format(type(self.w1), type(self.w2))
         
+
+    @property
+    def terminated(self):
+        result = self.w1.terminated
+        assert_eq(result, self.w2.terminated)
+        return result
+
+    @property
+    def score(self):
+        result = self.w1.score
+        assert_eq(result, self.w2.score)
+        return result
+    
     ##### data access interface
     
     def freeze(self):

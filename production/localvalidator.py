@@ -12,16 +12,9 @@ def validate(simulator, map_name, route):
     
     world = simulator.from_file('../data/sample_maps/{}.map'.format(map_name))
     
-    e = None
     for c in route:
-        world, e = world.apply_command(c)
-        if e is not None:
+        world = world.apply_command(c)
+        if world.terminated:
             break
         
-    if e is not None:
-        score = e
-    else:
-        score = world.get_score_abort()
-        assert score is not None
-        
-    return (score, world.get_map_string())
+    return (world.score, world.get_map_string())
