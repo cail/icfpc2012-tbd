@@ -178,11 +178,12 @@ def preprocess_world(world):
          
     stone_reachable = stone_reachability_step(width, data)
     for i in range(width, len(data)):
-        if not stone_reachable[i-width]:
-            cell = data[i]
-            if cell == '^':
-                data[i] = '#'
-            elif cell == '.':
+        cell = data[i]
+        if cell == '.':
+            if not stone_reachable[i-width] and not stone_reachable[i]:
                 data[i] = ' '
-                
+        elif cell == '^':
+            if not stone_reachable[i-width]:
+                data[i] = '#'
+        
     return world
