@@ -3,8 +3,8 @@ from world_definitions import Fields, Robot, Lift
 import random
 import os
 
-official_worlds_folder = '../data/sample_maps'
-our_custom_world_folder = '../data/maps_manual'
+official_worlds_folder = '../../data/sample_maps'
+our_custom_world_folder = '../../data/maps_manual'
 
 print_generated_maps = False
 
@@ -103,8 +103,9 @@ def load_official_portal_worlds():
             if world['name'].startswith('trampoline') ]    
 
 def load_our_worlds():
-    return load_from_folder(our_custom_world_folder)
-
+    return [ world for world in load_from_folder(our_custom_world_folder)
+            if world['name'].endswith('.map') ]
+    
 if __name__ == '__main__':
     assert(create_some_random(0, 0, 0) == [])
     assert(len(create_some_random(3, 1, 1)) == 3)

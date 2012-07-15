@@ -36,7 +36,7 @@ class drw_solver:
     def solve(self, src,  filename):
         world_obj = world.World.from_string(src)
         solver = genetic.GeneticSolver(world_obj)
-        solution = 'A' # solver.solve()
+        solution = solver.solve(15)
         return solution
 
     pass
@@ -44,7 +44,7 @@ class drw_solver:
 class predefined_solver:
     def __init__(self):
         self.name = 'manual'
-        self.solution_srcs = open('../data/maps_manual/scores', "r").read()
+        self.solution_srcs = open('../../data/maps_manual/scores', "r").read()
         lines = self.solution_srcs.split()
         self.solutions = { }
         current_map = 'null'

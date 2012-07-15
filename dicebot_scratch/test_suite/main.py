@@ -29,7 +29,6 @@ import solvers
 
 import random
 import time
-import json
 from itertools import chain
 
 # SETTINGS
@@ -54,7 +53,15 @@ def run_test(world, solver, interpretator):
     time1 = time.time()
     commands = solver.solve(world['source'], world['name'])
     time_taken = time.time() - time1
-    score = interpretator(world['source'], commands)
+    try:
+        score = interpretator(world['source'], commands)
+    except:        
+        print 'Commands: ', commands
+        print 'Map: '
+        print '_____'
+        print world['source']
+        print '-----'
+        raise            
     
     return { 
             'score' : score,
@@ -100,7 +107,7 @@ def test_basic_official():
 def test_flood_official():
     return test_world_list(worlds.load_official_flood_worlds())
     
-def test_out_worlds():
+def test_our_worlds():
     return test_world_list(worlds.load_our_worlds())    
     
     
@@ -119,7 +126,7 @@ def print_as_table(stats):
     for solver_name in solver_names:
         print '{:>10}'.format(solver_name),
     print      
-    for world_name, world_stats in stats.items():
+    for world_name, world_stats in stats:
         print '{:20}'.format(world_name),
         for solver_name in solver_names:
             print '{:10}'.format(world_stats['stats_per_solver'][solver_name]['score']),
@@ -132,10 +139,10 @@ if __name__ == '__main__':
     print 'Using seed', seed 
     random.seed(seed)    
     stats = chain( 
-        test_fuzzy(2, max_width = 20, max_height = 30, with_water = True),
+        test_fuzzy(2, max_width = 20, max_height = 30, with_water = True).items(),
         test_basic_official(),
         test_flood_official(),
-        test_out_worlds()
+        test_our_worlds()
     )
     print_as_table(stats)
     #print json.dumps(stats, indent=4, sort_keys = False)
