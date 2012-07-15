@@ -254,6 +254,9 @@ class World(WorldBase):
     def enumerate_lambdas_index(self):
         return [i for i,x in enumerate(self.data) if x == '\\']
     
+    def enumerate_something_index(self, something):
+        return [i for i,x in enumerate(self.data) if x == something]
+    
     def enumerate_lambdas(self):
         start = 0
         try:
