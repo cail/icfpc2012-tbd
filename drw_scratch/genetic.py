@@ -64,19 +64,32 @@ def crossover(candidate1, candidate2):
         if len(offspring.actions) > 0:
             return offspring    
 
+def apply_commands(world, commands):
+    assert(not world.terminated)
+    for c in commands:
+        world = world.apply_command(c)
+        if world.terminated:
+            break
+    return world
+
 class GeneticSolver(object):
     def __init__(self, world):
         self.world = world
+        self.landmarks = [i for i, c in enumerate(world.data) if c in '\L'] # no trampolines
+        
+        self.cache = {}
 
     def random_destination(self):
         while True:
-            i = random.randrange(len(self.world.data))
+            if random.random() < LANDMARK_GENE_CHANCE:
+                i = random.choice(self.landmarks)
+            else:
+                i = random.randrange(len(self.world.data))
             if self.world.data[i] != '#':
                 return i
         
     def generate_candidate(self, length=5):
-        # TODO: favor actions that take us to landmarks (lambdas, lift, trampolines)
-        return Candidate([self.random_destination() for i in xrange(length)])
+        return Candidate([self.random_destination() for _ in xrange(length)])
     
     def mutate(self, candidate):
         r = random.random()
@@ -90,39 +103,37 @@ class GeneticSolver(object):
 
     def fitness(self, candidate):
         world = World(self.world)
-        source = world.robot
+        world_hash = world.get_hash()
         for (wait, destination) in itertools.izip(candidate.waits, candidate.actions):
-            for i in xrange(wait):
-                world = world.apply_command('W')
+            if wait > 0:
+                world = apply_commands(world, ('W' for _ in xrange(wait)))
                 if world.terminated:
-                    return world.score
-            path = pathfinder.plot_path(world, destination)
-            if path == None:
-                return 0
-            commands = pathfinder.path_to_commands(path)
-            for c in commands:
-                world = world.apply_command(c)
-                if world.terminated:
-                    return world.score
+                    break
+                world_hash = world.get_hash()
+            cache_key = (world_hash, world.robot, destination)
+            cached = (cache_key in self.cache) 
+            if cached:
+                commands, world_hash = self.cache[cache_key]
+                world = apply_commands(world, commands)
+            else:
+                commands = pathfinder.commands_to_reach(world, destination)
+                world = apply_commands(world, commands)
+                world_hash = world.get_hash()
+                self.cache[cache_key] = (commands, world_hash)
+            if world.terminated:
+                break
         return world.score
     
-    # copy-paste of the above because it's 5:20 am and people need this
-    # the difference is that fitness avoids plotting junk actions
-    # there's actually a lot of junk DNA so this is important
     def compile(self, candidate):
         world = World(self.world)
-        source = world.robot
         compiled = []
         for (wait, destination) in itertools.izip(candidate.waits, candidate.actions):
-            for i in xrange(wait):
+            for _ in xrange(wait):
                 compiled.append('W')
                 world = world.apply_command('W')
                 if world.terminated:
                     return ''.join(compiled)
-            path = pathfinder.plot_path(world, destination)
-            if path == None:
-                return 'A'
-            commands = pathfinder.path_to_commands(path)
+            commands = pathfinder.commands_to_reach(world, destination)
             for c in commands:
                 compiled.append(c)
                 world = world.apply_command(c)
@@ -140,7 +151,6 @@ class GeneticSolver(object):
         return (scores, candidates)
     
     def step(self, population):
-        
         scores, candidates = self.evaluate_and_sort(population)
         print 'Fitness: max %d, average %d' % (scores[0], sum(scores)/float(len(scores)))
         
@@ -158,9 +168,9 @@ class GeneticSolver(object):
             if random.random() < CROSSOVER_RATE:
                 child = crossover(parent1, parent2)
             else:
-                child = random.choice([parent1, parent2])
+                child = parent1.copy()
             
-            for i in xrange(MUTATION_ATTEMPTS):
+            for _ in xrange(MUTATION_ATTEMPTS):
                 if random.random() < MUTATION_RATE:
                     child = self.mutate(child)
             next_generation.append(child)
@@ -169,14 +179,14 @@ class GeneticSolver(object):
         return next_generation
     
     def solve(self, timeout):
-        population = [self.generate_candidate(3) for i in xrange(POPULATION_SIZE)]
+        population = [self.generate_candidate(3) for _ in xrange(POPULATION_SIZE)]
         start_time = time.time()
         while True:
             population = self.step(population)
             if time.time() - start_time > timeout:
                 break
 
-        scores, candidates = self.evaluate_and_sort(population)
+        _, candidates = self.evaluate_and_sort(population)
         leader = candidates[0]
         return self.compile(leader)
 
@@ -186,6 +196,7 @@ SELECTED_FOR_BREEDING = 0.2
 CROSSOVER_RATE = 0.7
 MUTATION_RATE = 0.7
 MUTATION_ATTEMPTS = 4 # stir things up a bit
+LANDMARK_GENE_CHANCE = 0.3 # generates genes that makes us go to interesting places
 
 if __name__ == '__main__':
     timeout = 20
