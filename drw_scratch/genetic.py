@@ -68,6 +68,8 @@ class GeneticSolver(object):
     def __init__(self, world):
         self.world = world
         self.landmarks = [i for i, c in enumerate(world.data) if c in '\L'] # no trampolines
+        
+        self.cache = {}
 
     def random_destination(self):
         while True:
@@ -79,8 +81,7 @@ class GeneticSolver(object):
                 return i
         
     def generate_candidate(self, length=5):
-        # TODO: favor actions that take us to landmarks (lambdas, lift, trampolines)
-        return Candidate([self.random_destination() for i in xrange(length)])
+        return Candidate([self.random_destination() for _ in xrange(length)])
     
     def mutate(self, candidate):
         r = random.random()
@@ -94,27 +95,42 @@ class GeneticSolver(object):
 
     def fitness(self, candidate):
         world = World(self.world)
-        source = world.robot
+        world_hash = world.get_hash()
         for (wait, destination) in itertools.izip(candidate.waits, candidate.actions):
-            for i in xrange(wait):
+            for _ in xrange(wait):
                 world = world.apply_command('W')
                 if world.terminated:
                     return world.score
-            commands = pathfinder.commands_to_reach(world, destination)
+            if wait > 0:
+                world_hash = world.get_hash()
+            
+            cache_key = (world_hash, world.robot, destination)
+            if cache_key in self.cache:
+                cached = True
+                commands, world_hash = self.cache[cache_key]
+            else:
+                cached = False
+                commands = pathfinder.commands_to_reach(world, destination)
             if commands == None:
+                world_hash = world.get_hash()
+                if not cached: self.cache[cache_key] = (commands, world_hash)
                 return world.score
             for c in commands:
                 world = world.apply_command(c)
                 if world.terminated:
+                    world_hash = world.get_hash()
+                    if not cached: self.cache[cache_key] = (commands, world_hash)
                     return world.score
+            world_hash = world.get_hash()
+            if not cached: self.cache[cache_key] = (commands, world_hash)
+
         return world.score
     
     def compile(self, candidate):
         world = World(self.world)
-        source = world.robot
         compiled = []
         for (wait, destination) in itertools.izip(candidate.waits, candidate.actions):
-            for i in xrange(wait):
+            for _ in xrange(wait):
                 compiled.append('W')
                 world = world.apply_command('W')
                 if world.terminated:
@@ -159,7 +175,7 @@ class GeneticSolver(object):
             else:
                 child = parent1.copy()
             
-            for i in xrange(MUTATION_ATTEMPTS):
+            for _ in xrange(MUTATION_ATTEMPTS):
                 if random.random() < MUTATION_RATE:
                     child = self.mutate(child)
             next_generation.append(child)
@@ -168,14 +184,14 @@ class GeneticSolver(object):
         return next_generation
     
     def solve(self, timeout):
-        population = [self.generate_candidate(3) for i in xrange(POPULATION_SIZE)]
+        population = [self.generate_candidate(3) for _ in xrange(POPULATION_SIZE)]
         start_time = time.time()
         while True:
             population = self.step(population)
             if time.time() - start_time > timeout:
                 break
 
-        scores, candidates = self.evaluate_and_sort(population)
+        _, candidates = self.evaluate_and_sort(population)
         leader = candidates[0]
         return self.compile(leader)
 

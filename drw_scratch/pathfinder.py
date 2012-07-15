@@ -2,9 +2,8 @@ import itertools
 
 def commands_to_reach(world, destination):
     path = plot_path(world, destination)
-    if path is None:
-        return None
-    return path_to_commands(path)
+    commands = path_to_commands(path)
+    return commands
 
 def plot_path(world, destination):
     ''' Find a path to destination in world.
@@ -62,6 +61,8 @@ def reconstruct_path(came_from, destination):
     return path
 
 def path_to_commands(path):
+    if path is None:
+        return None
     commands = []
     point = path[0]
     for next_point in path[1:]:
