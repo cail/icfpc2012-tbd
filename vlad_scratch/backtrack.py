@@ -68,7 +68,7 @@ def solve(state, time_limit=15):
 
         preprocessed = preprocess_world(state)
         
-        if upper_bound(preprocessed) <= best.score:
+        if upper_bound(preprocessed)-state.time <= best.score:
             return
         
         aggressive_preprocess(preprocessed)
