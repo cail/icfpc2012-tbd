@@ -12,9 +12,6 @@ class fuzz_solver:
         for _ in range(random.randint(1, len(src))):
             solution += random.choice(actions)
         return solution
-        
-    def name(self):
-        return self.name
     
     pass
 
@@ -27,7 +24,4 @@ class vlad_solver:
         _, solution = backtrack.solve(world_obj)
         return solution
         
-    def name(self):
-        return self.name
-    
     pass

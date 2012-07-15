@@ -3,6 +3,8 @@ import dict_world
 import world 
 
 def interpret_impl(world_string, commands, instance):
+    if commands == '':
+        commands = 'A'
     for cmd in commands:
         instance, score = instance.apply_command(cmd)
         if score is not None:

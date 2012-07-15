@@ -103,10 +103,29 @@ def test_all():
        worlds.load_our_worlds()
     ))
     
+'''
+Pretty visualizer
+
+            solver1   solver2
+    
+map1        score     score
+map2        score     score
+
+'''
+def print_as_table(stats):
+    solver_names = [ solver.name for solver in solver_list ]
+    print "\t\t\t%s" % '\t'.join(solver_names)
+    for world_name, world_stats in stats.items():
+        scores = [ 0 for _ in solver_names ]
+        for solver_name, solver_stat in world_stats['stats_per_solver'].items():
+            scores[solver_names.index(solver_name)] = str(solver_stat['score'])                    
+        print '%s\t%s' % (world_name, '\t'.join(scores)) 
+    
 if __name__ == '__main__':
     random.seed(42)
     #stats = test_fuzzy(2, max_width = 20, max_height = 30, with_water = True)
-    stats = test_fuzzy(1, max_width = 5, max_height = 5, with_water = False)
+    #stats = test_fuzzy(1, max_width = 5, max_height = 5, with_water = False)
     #stats = test_all_official()
-    #stats = test_basic_official()
-    print json.dumps(stats, indent=4, sort_keys = False)
+    stats = test_basic_official()
+    print_as_table(stats)
+    #print json.dumps(stats, indent=4, sort_keys = False)
