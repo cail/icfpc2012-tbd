@@ -15,6 +15,7 @@ import pathfinder
 # (treating a boulder like an empty destination 
 # space does nothing more often than not)
 
+
 class Candidate(object):
     __slots__ = [
         'genes',
@@ -26,8 +27,8 @@ class Candidate(object):
         else:
             self.genes = []
         
-    def insert(self, index, destination):
-        self.genes.insert(index, ('move', destination))
+    def insert(self, index, gene):
+        self.genes.insert(index, gene)
     
     def remove(self, index):
         self.genes.pop(index)
@@ -102,19 +103,21 @@ class GeneticSolver(object):
                 mutation = self.mutations_generator.next()
                 
         index = random.randrange(len(candidate))
-        if mutation == 'insert':
-            if random.random() < SHORT_MOVE_CHANCE:
-                # TODO: FIX
-                last_destination = candidate.genes[index - 1][1] \
-                    if index > 0 else self.world.robot  
-                candidate.insert(index, self.random_destination(near=last_destination))
-            else:
-                candidate.insert(index, self.random_destination())
-        elif mutation == 'wait':
-            pass
-#            new_value = candidate.waits[index] + random.choice([+1, -1])
-#            if new_value < 0: new_value = 1
-#            candidate.waits[index] = new_value
+        if mutation == 'insert_short_move':
+            last_destination = None
+            for i in xrange(index - 1, -1):
+                if candidate.genes[i][0] == 'move':
+                    last_destination = candidate.genes[i][1]
+                    break
+            if last_destination == None:
+                last_destination = self.world.robot
+            gene = ('move', self.random_destination(near=last_destination))
+            candidate.insert(index, gene)
+        elif mutation == 'insert_long_move':
+            gene = ('move', self.random_destination())
+            candidate.insert(index, gene)
+        elif mutation == 'insert_wait':
+            candidate.insert(index, ('wait', None))
         elif mutation == 'remove':
             candidate.remove(index)
         else:
@@ -126,41 +129,48 @@ class GeneticSolver(object):
         world_hash = world.get_hash()
         for gene in candidate.genes:
             gene_type, gene_value = gene
-            destination = gene_value
-#            if wait > 0:
-#                world = world.apply_commands('W' for _ in xrange(wait))
-#                if world.terminated:
-#                    break
-#                world_hash = world.get_hash()
-            cache_key = (world_hash, world.robot, destination)
-            cached = (cache_key in self.cache)
-            if cached:
-                commands, world_hash = self.cache[cache_key]
-                world = world.apply_commands(commands)
-            else:
-                commands = pathfinder.commands_to_reach(world, destination)
-                world = world.apply_commands(commands)
+            if gene_type == 'wait':
+                world = world.apply_command('W')
+                if world.terminated:
+                    break
                 world_hash = world.get_hash()
-                self.cache[cache_key] = (commands, world_hash)
-            if world.terminated:
-                break
+            elif gene_type == 'move':
+                destination = gene_value
+                cache_key = (world_hash, world.robot, destination)
+                cached = (cache_key in self.cache)
+                if cached:
+                    commands, world_hash = self.cache[cache_key]
+                    world = world.apply_commands(commands)
+                else:
+                    commands = pathfinder.commands_to_reach(world, destination)
+                    world = world.apply_commands(commands)
+                    world_hash = world.get_hash()
+                    self.cache[cache_key] = (commands, world_hash)
+                if world.terminated:
+                    break
+            else:
+                assert False, "Unrecognized gene: %s" % gene_type
         return world.score
     
     def compile(self, candidate):
         world = World(self.world)
         compiled = []
-        for (wait, destination) in itertools.izip(candidate.waits, candidate.actions):
-            for _ in xrange(wait):
-                compiled.append('W')
+        for gene in candidate.genes:
+            gene_type, gene_value = gene
+            if gene_type == 'wait':
                 world = world.apply_command('W')
+                compiled.append('W')
                 if world.terminated:
-                    return ''.join(compiled)
-            commands = pathfinder.commands_to_reach(world, destination)
-            for c in commands:
-                compiled.append(c)
-                world = world.apply_command(c)
+                    break
+            elif gene_type == 'move':
+                destination = gene_value
+                commands = pathfinder.commands_to_reach(world, destination)
+                compiled.extend(commands)
+                world = world.apply_commands(commands)
                 if world.terminated:
-                    return ''.join(compiled)
+                    break
+            else:
+                assert False, "Unrecognized gene: %s" % gene_type
         compiled.append('A')
         return ''.join(compiled)
     
@@ -210,7 +220,7 @@ class GeneticSolver(object):
         next_generation.extend(elite)
         return (next_generation, leader)
     
-    def solve(self, timeout, local_timeout=10):
+    def solve(self, timeout, local_timeout=15):
         start_time = time.time()
         timed_out = False
         best_leader, best_leader_score = None, None
@@ -244,9 +254,10 @@ MUTATION_RATE = 0.7
 MUTATION_ATTEMPTS = 4 # stir things up a bit
 LANDMARK_GENE_CHANCE = 0.3 # generates genes that makes us go to interesting places
 NUM_ELITE = 3 # top N candidates are copied to the new generation unchanged 
-MUTATIONS = [('insert', 2), ('wait', 2), ('remove', 2), ('fuzz', 0)] # weighted mutations
+MUTATIONS = [('insert_long_move', 10), ('insert_short_move', 5),\
+              ('insert_wait', 0), ('remove', 10),] # weighted mutations
 SHORT_MOVE_DISTANCE = 3
-SHORT_MOVE_CHANCE = 0.3
+#SHORT_MOVE_CHANCE = 0.3
 
 if __name__ == '__main__':
     timeout = 20
