@@ -7,15 +7,13 @@ from itertools import *
 from world import World
 
 from preprocessor import preprocess_world
-from utils import path_to_nearest_lambda
+from utils import dist, path_to_nearest_lambda
+from upper_bound import upper_bound
 
 
 class C(object):
     pass
 
-
-def dist((x1, y1), (x2, y2)):
-    return abs(x1-x2)+abs(y1-y2)
 
 
 def aggressive_preprocess(world):
@@ -36,33 +34,7 @@ def aggressive_preprocess(world):
     data.extend(['\\']*num_lambdas)
     
 
-def upper_bound(state):
-    '''
-    Upper bound on total score
-    '''
-    
-    collectable_lambdas = state.collected_lambdas+sum(1 for _ in state.enumerate_lambdas())
 
-    # TODO: take trampolines into account in max_dist calculation
-
-    if collectable_lambdas == state.total_lambdas:
-            
-        if state.collected_lambdas == state.total_lambdas:
-            max_dist = dist(state.robot_coords, state.lift_coords)
-        else:
-            max_dist = 0
-            for xy in state.enumerate_lambdas():
-                max_dist = max(max_dist, 
-                               dist(state.robot_coords, xy)+dist(xy, state.lift_coords))
-        return 75*state.total_lambdas-state.time-max_dist
-    
-    else:
-        max_dist = 0
-        for xy in state.enumerate_lambdas():
-            max_dist = max(max_dist, 
-                           dist(state.robot_coords, xy))
-                    
-        return 50*collectable_lambdas-state.time-max_dist
     
 
 def solve(state, time_limit=5):
