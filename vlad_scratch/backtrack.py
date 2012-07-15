@@ -73,7 +73,7 @@ def solve(state, time_limit=5):
         
         aggressive_preprocess(preprocessed)
 
-        frozen_state = hash(preprocessed.freeze())
+        frozen_state = preprocessed.get_hash()
         old_score = visited.get(frozen_state)
         if old_score is not None and s <= old_score:
             return
@@ -103,7 +103,7 @@ def solve(state, time_limit=5):
                 commands.append(cmd)
             
             if new_state.final_score is None:
-                h = hash(new_state.freeze())
+                h = new_state.get_hash()
                 if h not in next_steps:
                     next_steps.add(h)
                     if cmds in greedy:

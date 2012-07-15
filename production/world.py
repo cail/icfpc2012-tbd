@@ -226,11 +226,12 @@ class World(WorldBase):
                             continue
         return new_world
      
-    def freeze(self):
-        '''
-        For hashing
-        '''
-        return (tuple(self.data), self.time)
+    # not __hash__ because semantics is slightly different
+    def get_hash(self):
+        s = ''.join(self.data) + repr((self.time, ))
+        # TODO: clarify what exactly should be hashed
+        # TODO: 64-bit hash
+        return hash(s)
    
     
     #### Implementation stuff

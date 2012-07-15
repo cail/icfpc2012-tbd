@@ -148,11 +148,6 @@ class DictWorld(WorldBase):
         other.update()
         return other
     
-    def freeze(self):
-        '''return immutable (hashable) state'''
-        data = frozenset(self.data.items())
-        return (data, self.time, self.aborted, self.lifted, self.dead)
-    
     
     #### Implementation stuff
         

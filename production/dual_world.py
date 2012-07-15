@@ -65,9 +65,6 @@ class DualWorld(WorldBase):
     
     ##### data access interface
     
-    def freeze(self):
-        return (self.w1.freeze(), self.w2.freeze())
-
     @property
     def time(self):
         result = self.w1.time
