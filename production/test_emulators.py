@@ -26,7 +26,13 @@ tests = [
     ('flood1', 'LLLLDWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWUWWW'), # goes really wrong if you forget to reset underwater timer when getting out 
     
     ('contest8', 'RRRRRRRULD'), # map should be completely evaluated on death
-    ('contest8', 'RRRRRUD'), # and with down-up evaluation as well.     
+    ('contest8', 'RRRRRUD'), # and with down-up evaluation as well.
+    
+    ('flood1', 'LLLLDDDDWWWDWWWWU'), # can't escape from underwater     
+    ('flood1', 'LLLLDDDDWWWDWWWU'), # can escape from underwater
+    
+    ('flood1', 'LLLLLLDDDRUWWWWWWWWWWWWWWWWWWWWWWWWWWL'), # drowning happens after the update     
+    ('flood1', 'LLLLLLDDDRUWWWWWWWWWWWWWWWWWWWWWWWWWWD'), # update doesn't prevent drowning
     
     # Pls add your own tests everyone, especially for interesting cases
     ]

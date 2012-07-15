@@ -207,7 +207,7 @@ class DictWorld(WorldBase):
             self.underwater += 1
             if self.underwater > self.waterproof:
                 self.dead = True
-                return
+                # still run the rest of the update
         else:
             self.underwater = 0
         
