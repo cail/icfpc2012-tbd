@@ -22,7 +22,10 @@ def upper_bound(state):
         max_dist = salesman_lower_bound(state, need_exit=True)
         return 75*state.total_lambdas-max_dist
     else:
-        max_dist = salesman_lower_bound(state, need_exit=False)
+        if state.total_lambdas < 0: # special negative value set by preprocessor:
+            max_dist = 0
+        else:
+            max_dist = salesman_lower_bound(state, need_exit=False)
                     
         return 50*collectable_lambdas-max_dist
     
