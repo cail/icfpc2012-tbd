@@ -5,6 +5,14 @@ class WorldBase(object):
     def from_file(cls, filename):
         with open(filename) as f:
             return cls.from_string(f.read())
+        
+    def apply_commands(self, commands):
+        world = self
+        for command in commands:
+            if world.terminated:
+                break
+            world = world.apply_command(command)
+        return world
 
     def get_score_lose(self):
         return self.collected_lambdas * 25 - self.time
