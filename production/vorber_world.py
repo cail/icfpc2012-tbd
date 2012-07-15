@@ -219,22 +219,24 @@ class VorberWorld(WorldBase):
             self.time -= 1
             self.aborted = True
         if move == 'S':
-            self.grow_beard(old_x-1, old_y-1, VorberWorld.Empty)
-            self.grow_beard(old_x-1, old_y, VorberWorld.Empty)
-            self.grow_beard(old_x-1, old_y+1, VorberWorld.Empty)
-            self.grow_beard(old_x, old_y-1, VorberWorld.Empty)
-            self.grow_beard(old_x, old_y, VorberWorld.Empty)
-            self.grow_beard(old_x, old_y+1, VorberWorld.Empty)
-            self.grow_beard(old_x+1, old_y-1, VorberWorld.Empty)
-            self.grow_beard(old_x+1, old_y, VorberWorld.Empty)
-            self.grow_beard(old_x+1, old_y+1, VorberWorld.Empty)
+            if self.Razors > 0:
+                self.Razors -= 1
+                self.grow_beard(old_x-1, old_y-1, VorberWorld.Empty)
+                self.grow_beard(old_x-1, old_y, VorberWorld.Empty)
+                self.grow_beard(old_x-1, old_y+1, VorberWorld.Empty)
+                self.grow_beard(old_x, old_y-1, VorberWorld.Empty)
+                self.grow_beard(old_x, old_y, VorberWorld.Empty)
+                self.grow_beard(old_x, old_y+1, VorberWorld.Empty)
+                self.grow_beard(old_x+1, old_y-1, VorberWorld.Empty)
+                self.grow_beard(old_x+1, old_y, VorberWorld.Empty)
+                self.grow_beard(old_x+1, old_y+1, VorberWorld.Empty)
         if move == 'W':
             pass
 
         if abs(old_x - new_x) + abs(old_y - new_y) == 1:
 
             tv = self.get(new_x, new_y)
-            if tv in [VorberWorld.Empty, VorberWorld.Earth, VorberWorld.Lambda, VorberWorld.Open, VorberWorld.Closed]:
+            if tv in [VorberWorld.Empty, VorberWorld.Earth, VorberWorld.Lambda, VorberWorld.Open, VorberWorld.Closed, VorberWorld.Razor]:
                 if tv == VorberWorld.Lambda:
                     self.lambda_count -= 1
                     self.collected_lambdas+= 1
@@ -244,7 +246,8 @@ class VorberWorld(WorldBase):
                     self.robot_y = new_y
                     self.set_in_world(old_x, old_y, VorberWorld.Empty)
                     return
-
+                if tv == VorberWorld.Razor:
+                    self.Razors += 1
                 self.robot_x = new_x
                 self.robot_y = new_y
                 self.set_in_world(new_x, new_y, VorberWorld.Robot)
@@ -300,7 +303,7 @@ class VorberWorld(WorldBase):
         return self.score
 
 if __name__ == "__main__":
-    mmap = VorberWorld.from_file("../vorber_scratch/tramp.map")
+    mmap = VorberWorld.from_file("../vorber_scratch/beard.map")
     route = "WWWWWWWWWWWWWWWWWWWLLLUUUUUULLLLLLLLLRRRRRRRRRRRR"
     interactive = True
     if interactive:

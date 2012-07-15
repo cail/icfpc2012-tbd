@@ -33,7 +33,6 @@ def create_chaotic(height, width, properties):
         result += 'Flooding %d\n' % random.randint(0, height)
         result += 'Water %d\n' % random.randint(0, height)
     assert has_robot
-    assert has_lift
     return result
 
 def create_balanced(height, width, properties):
@@ -67,9 +66,15 @@ def create_balanced(height, width, properties):
     result = '\n'.join([ ''.join(world_line) for world_line in world ])
     return result
 
+def create_maze(height, width, rooms):
+    # stub
+    
+    return ''
+
 random_generator_table = {
     'chaotic' : create_chaotic, 
-    'balanced' : create_balanced
+    'balanced' : create_balanced,
+    'maze' : create_maze
 }
 
 random_counter = 0 # utility, to differentiated generated maps by numbers
@@ -155,4 +160,6 @@ if __name__ == '__main__':
         'walls' : 0.0,
         'earth_to_empty' : 1 
     })
+    print world['source']
+    world = create_one_random(15, 15, {'mode' :'maze'})
     print world['source']

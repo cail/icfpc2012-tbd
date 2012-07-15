@@ -65,10 +65,9 @@ class World(WorldBase):
             print src
             raise
         lines = src.split('\n')
-        if lines[-1] == '': del lines[-1]
-        
+        while lines[-1] == '': del lines[-1]
+
         width = max(imap(len, lines))
-        #assert all(len(l) == width for l in lines)
         width += 2
         
         # use plain list of interned strings (which would remain interned)
@@ -188,7 +187,7 @@ class World(WorldBase):
         else:
             new_world.underwater = 0
         
-        for i in xrange(1, len(data) / width - 1):
+        for i in xrange(len(data) / width - 2, 0, -1):
             offset = i * width
             for offset in xrange(offset + 1, offset + width - 1):
                 cell = data[offset]
@@ -199,32 +198,24 @@ class World(WorldBase):
                         new_data[offset] = ' '
                         new_data[offset_below] = '*'
                         if offset_below + width == new_robot:
-                            new_world.final_score = new_world.get_score_lose() 
-                            return new_world
-                        continue
-                    if cell_below == '*' or cell_below == '^': # '^' is frozen stone (that is, 'slippery wall')
+                            new_world.final_score = new_world.get_score_lose()
+                    elif cell_below == '*' or cell_below == '^': # '^' is frozen stone (that is, 'slippery wall')
                         if data[offset + 1] == ' ' and data[offset_below + 1] == ' ':
                             new_data[offset] = ' '
                             new_data[offset_below + 1] = '*'
                             if offset_below + width + 1 == new_robot:
                                 new_world.final_score = new_world.get_score_lose() 
-                                return new_world
-                            continue
-                        if data[offset - 1] == ' ' and data[offset_below - 1] == ' ':
+                        elif data[offset - 1] == ' ' and data[offset_below - 1] == ' ':
                             new_data[offset] = ' '
                             new_data[offset_below - 1] = '*'
                             if offset_below + width - 1 == new_robot:
                                 new_world.final_score = new_world.get_score_lose() 
-                                return new_world
-                            continue
-                    if cell_below == '\\':
+                    elif cell_below == '\\':
                         if data[offset + 1] == ' ' and data[offset_below + 1] == ' ':
                             new_data[offset] = ' '
                             new_data[offset_below + 1] = '*'
                             if offset_below + width + 1 == new_robot:
                                 new_world.final_score = new_world.get_score_lose() 
-                                return new_world
-                            continue
         return new_world
      
     # not __hash__ because semantics is slightly different
