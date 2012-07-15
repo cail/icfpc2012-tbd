@@ -27,10 +27,9 @@ class DualWorld(WorldBase):
                          World.from_string(s))
         
     def apply_command(self, c):
-        w1, e1 = self.w1.apply_command(c)
-        w2, e2 = self.w2.apply_command(c)
-        assert_eq(e1, e2)   
-        return DualWorld(w1, w2), e1
+        w1 = self.w1.apply_command(c)
+        w2 = self.w2.apply_command(c)
+        return DualWorld(w1, w2)
     
     def get_score_abort(self):
         s1 = self.w1.get_score_abort()
