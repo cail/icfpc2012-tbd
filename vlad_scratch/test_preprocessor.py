@@ -67,6 +67,8 @@ def check_preprocessor(world, commands, verbose=True):
     w2 = preprocess_world(w1)
     n = 0
     for cmd in commands:
+        pw1 = w1
+        pw2 = w2
         w1 = w1.apply_command(cmd)
         w2 = w2.apply_command(cmd)
         n += 1
@@ -78,6 +80,9 @@ def check_preprocessor(world, commands, verbose=True):
     t2 = w2.terminated, w2.score
     
     if t1 != t2:
+        print
+        pw1.show()
+        pw2.show()
         print
         w1.show()
         print t1
@@ -98,9 +103,10 @@ def fuzzy_tests():
     
     maps = glob('../data/sample_maps/contest*.map')
     maps += glob('../data/sample_maps/flood*.map')
+    maps += glob('../data/maps_manual/*.map')
     
     for map_path in maps:
-        print map_path
+        print map_path,
         world = World.from_file(map_path)
         
         for i in range(50):
