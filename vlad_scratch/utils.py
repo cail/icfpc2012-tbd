@@ -1,6 +1,9 @@
 import warnings
 from itertools import chain
 
+from world import World
+
+
 def dist((x1, y1), (x2, y2)):
     return abs(x1-x2)+abs(y1-y2)
 
@@ -47,7 +50,7 @@ def enumerate_paths_to_goals(world, start, walkable, goals):
 
 def path_to_nearest_lambda_or_lift(world):
     '''
-    return path to nearest lambda (lift if all lambdas are collected) or None
+    return pair (idx, path) to nearest lambda (lift if all lambdas are collected) or None
     '''
     
     if world.collected_lambdas == world.total_lambdas:
@@ -59,23 +62,96 @@ def path_to_nearest_lambda_or_lift(world):
     
     result= next(enumerate_paths_to_goals(world, start=world.robot, walkable=' .!\\', goals=goal),
                  None)
-    if result is not None:
-        _, path = result
-        return path
-    else:
-        return None
+    return result
     
 
+def interesting_actions(world):
+    '''
+    receive preprocessed world
+    
+    return a few number of significantly varying actions
+    '''
+
+    world = World(world)
+
+    data = world.data
+    width = world.width
+        
+    # TODO: lambda rocks?
+    if data[world.robot-width] == '*' and data[world.robot+width] not in 'O':
+        data[world.robot+width] = '#'
+        # never go down when under a rock!
+    
+    actions = []
+    
+    t = path_to_nearest_lambda_or_lift(world)
+    if t is not None:
+        idx, path = t
+        actions.append((9, idx, path))
+        
+    
+    eatable = '.!\\'
+    
+    for i in range(world.width, len(data)):
+        if data[i-width] in '*@' and data[i] in eatable:
+            data[i] = '_'
+        if data[i] in '*@':
+            right = data[i-1] in eatable and data[i+1] == ' '
+            left = data[i+1] in eatable and data[i-1] == ' '
+            if right:
+                data[i-1] = '>'
+            if left:
+                data[i+1] = '<'
+        
+    # TODO: trampolines?
+    
+    #world.show()
+        
+    walkable = ' .!\\<>_'
+    
+    interesting = '_<>\\'
+    for idx, path in enumerate_paths_to_goals(world, world.robot, walkable, interesting):
+        if not actions or actions[0][2] != path:
+            actions.append((0, idx, path))
+
+    #for a in actions:
+    #    print a, data[a[1]]
+        
+    interesting = []
+    if actions != []:
+        a = max(actions)
+        interesting.append(a)
+        actions.remove(a)
+        
+        for _ in range(3):
+            if actions == []:
+                break
+            def dist_to_others(a):
+                _, idx, _ = a
+                xy = world.index_to_coords(idx)
+                return min(dist(xy, world.index_to_coords(i[1])) for i in interesting)
+            a = max(actions, key=dist_to_others)
+            interesting.append(a)
+            actions.remove(a)
+
+    #print '---'
+    #for a in interesting:
+    #    print a, data[a[1]], world.index_to_coords(a[1])
+        
+    return [a[2] for a in interesting]
   
                 
 if __name__ == '__main__':
-    from world import World
+
+    from preprocessor import preprocess_world
     
-    world = World.from_file('../data/sample_maps/contest3.map')
+    world = World.from_file('../data/sample_maps/contest10.map')
     
     world.show()
     
-    print path_to_nearest_lambda_or_lift(world)
+    #print path_to_nearest_lambda_or_lift(world)
+    
+    print interesting_actions(preprocess_world(world))
     
     
     

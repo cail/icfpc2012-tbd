@@ -6,14 +6,12 @@ import logging
 
 from time import clock, sleep
 from collections import defaultdict, Counter
+from itertools import product
 
+from solver_base import SolverBase
 from preprocessor import preprocess_world
 from upper_bound import upper_bound
-from utils import dist, path_to_nearest_lambda_or_lift
-
-
-class StopSearch(Exception):
-    pass
+from utils import dist, path_to_nearest_lambda_or_lift, interesting_actions
 
 
 class PathEntry(object):
@@ -30,13 +28,9 @@ class CacheEntry(object):
         'command', # recommended command
         ]
 
-class Solver(object):
+class Solver(SolverBase):
     def __init__(self, world, timeout=15):
-        self.best_score = 0
-        self.best_solution = ''
-        self.timeout = timeout
-        self.start = clock()
-        self.stop_flag = False
+        SolverBase.__init__(self, world, timeout)
         
         self.cache = {} # aggressively preprocessed state hash -> cache entry
         
@@ -47,14 +41,7 @@ class Solver(object):
         
         self.stats = defaultdict(int)
     
-    def check_stop(self):
-        if self.stop_flag or \
-           self.timeout is not None and clock()-self.start > self.timeout:
-            raise StopSearch()
-        
-    def signal_stop(self):
-        self.stop_flag = True
-        
+                
     def get_ub_and_cache_entry(self, world):
         '''
         return upper bound and CacheEntry;
@@ -62,6 +49,8 @@ class Solver(object):
         given world is raw (not even preprocessed);
         calls are cached
         '''
+        
+        assert not world.terminated
         
         raw_hash = world.get_hash()
         result = self.ub_ce_cache.get(raw_hash)
@@ -107,10 +96,11 @@ class Solver(object):
         
         ub, cache_entry = self.get_ub_and_cache_entry(self.state)
         
-        if cache_entry.time <= self.state.time:
+        t = self.state.time
+        if cache_entry.time <= t:
             self.stats['cache cut'] += 1
             return
-        cache_entry.time = self.state.time
+        cache_entry.time = t
 
         if ub <= self.best_score:
             self.stats['ub cut'] += 1
@@ -118,17 +108,30 @@ class Solver(object):
         
         current_state = self.state
         
-        
+        ia = []
         greedy_commands = []
         if cache_entry.command is not None:
             greedy_commands = [cache_entry.command]
         else:
-            ptn = path_to_nearest_lambda_or_lift(self.state)
-            if ptn is not None:
-                assert len(ptn) > 0
-                greedy_commands = [ptn]
+            ia = interesting_actions(preprocess_world(current_state)) # TODO: remove preprocessing step
+            
+            if ia:
+                greedy_commands = ia[:1]
+                ia = ia[1:]
+            
+            #ptn = path_to_nearest_lambda_or_lift(current_state)
+            #if ptn is not None:
+            #    _, ptn = ptn
+            #    assert len(ptn) > 0
+            #    greedy_commands = [ptn]
         
-        ordinary_commands = list('LRUDW')
+        
+        #ordinary_commands = list('LRUDW')
+        ordinary_commands = [''.join(cmd) for cmd in product('LRUDW', repeat=1)]
+        # TODO: remove those that lead to duplicates
+        
+        ordinary_commands += ia
+        
         for g in greedy_commands:
             if g in ordinary_commands:
                 ordinary_commands.remove(g)
@@ -153,7 +156,10 @@ class Solver(object):
         children = {}
         for cmd in ordinary_commands:
             t = current_state.apply_commands(cmd)
-            ub, _ = self.get_ub_and_cache_entry(t)
+            if t.terminated:
+                ub = t.score
+            else:
+                ub, _ = self.get_ub_and_cache_entry(t)
             children[cmd] = ub
             
         ordinary_commands = sorted(children, key=children.get, reverse=True)
@@ -164,21 +170,20 @@ class Solver(object):
         self.state = current_state
         
     
-    def solve(self):
-        try:
-            for depth in range(0, 60, 4):
-                logging.info('depth: {}'.format(depth))
-                self.rec(depth)
-                
-                for cache_entry in self.cache.itervalues():
-                    cache_entry.time += 1e-3
+    def search(self):
+        for depth in range(0, 100, 1):
+            logging.info('depth: {}'.format(depth))
+            self.rec(depth)
             
-        except StopSearch:
-            logging.info('StopSearch exception')
-            pass
+            for cache_entry in self.cache.itervalues():
+                cache_entry.time += 1e-3
+        
+            
+    def log_stats(self):
         logging.info('{} cache entries'.format(len(self.cache)))
         logging.info('{} ub_ce_cache entries'.format(len(self.ub_ce_cache)))
         logging.info('stats: {}'.format(self.stats))
+        logging.info('{} preprocesses per second'.format(self.stats['preprocess']/(clock()-self.start+1e-3)))
         logging.info('search took {}s'.format(clock()-self.start))
     
     def get_best(self):
@@ -223,11 +228,12 @@ def main():
     from world import World
     from dual_world import DualWorld
     from dict_world import DictWorld
-    from test_emulators import validate
+    from test_emulators import validate_custom
 
     
     map_name = 'contest10'
     map_path = '../data/sample_maps/{}.map'.format(map_name)
+    #map_path = '../data/maps_manual/push2.map'
     world = World.from_file(map_path)
     
     world.show()
@@ -237,6 +243,7 @@ def main():
     solver = Solver(world)
     solver.solve()
     score, solution = solver.get_best()
+    solver.log_stats()
 
     sleep(0.1) # for stderr to flush
     
@@ -254,7 +261,7 @@ def main():
     
     assert score == validated_score, (score, validated_score)
     
-    validate(map_name, solution, World, DictWorld, DualWorld)
+    validate_custom(map_path, solution, [World, DictWorld, DualWorld])
     
     print 'ok'
     

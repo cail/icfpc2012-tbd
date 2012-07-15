@@ -88,7 +88,7 @@ def solve(state, time_limit=15):
         
         greedy = path_to_nearest_lambda_or_lift(state)
         if greedy is not None:
-            greedy = [greedy]
+            greedy = [greedy[1]]
         else:
             greedy = []
             
@@ -99,7 +99,6 @@ def solve(state, time_limit=15):
             for cmd in cmds:
                 if new_state.final_score is None:
                     new_state = new_state.apply_command(cmd)
-                    # TODO: check()
                 commands.append(cmd)
             
             if new_state.final_score is None:
