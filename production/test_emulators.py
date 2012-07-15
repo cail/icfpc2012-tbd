@@ -31,14 +31,36 @@ class WebValidatorProxy(object):
         self.score, self.map_string = webvalidator.validate(map_name, commands, 10.0)
     def get_map_string(self):
         return self.map_string
-
+    
 def validate(map_name, commands, *world_classes):
+    '''Validate commands with given simulators, then (or on error) with the web-validator,
+    return True if no deviations were found.
+    
+    `map_name` should be like 'contest3', without path or extension.
+    
+    Use validate_custom() to validate custom maps without the possibility to use the web-validator.
+    '''
+    with open('../data/sample_maps/{}.map'.format(map_name)) as f:
+        data = f.read()
+    return validate_internal(data, commands, map_name, world_classes)
+    
+def validate_custom(map_path, commands, *world_classes):
+    '''Validate commands with given simulators, then (or on error) with the web-validator,
+    return True if no deviations were found.
+    
+    `map_path` should be a proper pathname, like '../data/maps_manual/abort1.map'
+    
+    Use validate() to validate on standard maps against the web-validator.
+    '''
+    with open(map_path) as f:
+        data = f.read()
+    return validate_internal(data, commands, None, world_classes)
+    
+def validate_internal(map_data, commands, web_map_name, world_classes):
     '''Validate commands with given simulators, then (or on error) with the web-validator.
     
     Return True if no deviations were found.
     '''
-    can_has_webvalidator = re.match(r'^(contest|flood|trampoline)\d+$', map_name) is not None
-    
     def format_world_state(world):
         return '{}\nScore:{!r}'.format(world.get_map_string(), world.score)
     
@@ -47,8 +69,8 @@ def validate(map_name, commands, *world_classes):
         for world in worlds:
             result_dict[format_world_state(world)].append(world.__class__.__name__)
             
-        if can_has_webvalidator and (always_webvalidate or len(result_dict) > 1):
-            web_world = WebValidatorProxy(map_name, commands)
+        if web_map_name and (always_webvalidate or len(result_dict) > 1):
+            web_world = WebValidatorProxy(web_map_name, commands)
             result_dict[format_world_state(web_world)].insert(0, '*Web validator*')
             
         if len(result_dict) > 1:
@@ -67,7 +89,7 @@ def validate(map_name, commands, *world_classes):
     
     assert len(world_classes)
         
-    worlds = [cls.from_file('../data/sample_maps/{}.map'.format(map_name)) for cls in world_classes]
+    worlds = [cls.from_string(map_data) for cls in world_classes]
     
     # check initial states
     if not check_worlds(worlds, '', None): return False
@@ -89,7 +111,7 @@ def validate(map_name, commands, *world_classes):
         if terminated:
             break
     # check last state against the web-validator if possible
-    if not can_has_webvalidator: 
+    if not web_map_name: 
         return True
     return check_worlds(worlds, commands, None, True)
 
