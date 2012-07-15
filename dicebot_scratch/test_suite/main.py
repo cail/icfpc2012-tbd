@@ -92,6 +92,7 @@ def test_fuzzy(count, min_width = 5, max_width = 1000, min_height = 5, max_heigh
     properties = {'mode' : 'chaotic'}
     if with_water:
         properties['flooding'] = 1 # portions of maps with water
+    
     return test_world_list([ 
         worlds.create_one_random(random.randint(min_height, max_height),
                                  random.randint(min_width, max_width),
@@ -100,6 +101,45 @@ def test_fuzzy(count, min_width = 5, max_width = 1000, min_height = 5, max_heigh
         for _ in range(count) 
     ])
     
+def test_all_random():
+    properties = {'mode' : 'chaotic', 'flooding' : 'true' }
+    
+    count_fuzzy = 10
+    max_height_fuzzy = 50
+    max_width_fuzzy = 50
+    
+    fuzzy = [ 
+        worlds.create_one_random(random.randint(5, max_height_fuzzy),
+                                 random.randint(5, max_width_fuzzy),
+                                 properties
+                                )
+        for _ in range(count_fuzzy) 
+    ]
+    
+    properties = {
+        'mode' : 'balanced',
+        'lambdas' : 0.05,
+        'stones' : 0.3,
+        'walls' : 0.0,
+        'earth_to_empty' : 1.0 
+    }
+    
+    count_balanced = 3
+    height_balanced = 300
+    width_balanced = 300
+    
+    balanced1 = [ 
+        worlds.create_one_random(height_balanced,
+                                 width_balanced,
+                                 properties
+                                )
+        for _ in range(count_balanced) 
+    ]
+    
+    return test_world_list(chain(
+        fuzzy, balanced1
+    ))
+        
 def test_all_official():
     return test_world_list(worlds.load_official_worlds())
     
@@ -141,7 +181,7 @@ if __name__ == '__main__':
     print 'Using seed', seed 
     random.seed(seed)
     
-    random_stats = test_fuzzy(4, max_width = 20, max_height = 30, with_water = True)
+    random_stats = test_all_random()
     predef_stats = test_world_list(chain(
         load_official_basic_worlds(),
         load_official_flood_worlds(),

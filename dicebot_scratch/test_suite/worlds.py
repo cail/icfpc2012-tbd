@@ -1,4 +1,4 @@
-from world_definitions import Fields, Robot, Lift
+import world_definitions as objects
 
 import random
 import os
@@ -9,23 +9,24 @@ our_custom_world_folder = '../../data/maps_manual'
 print_generated_maps = False
 
 def create_chaotic(height, width, properties):
+    assert width*height >= 2
     result = ''
     has_robot = False
     has_lift = False
     last = width*height
     for i in range(1,height+1):
         for j in range(1,width+1):
-            if (not has_robot and ((random.randint(0, last-1) == 1) 
+            if (not has_robot and ((random.randint(0, last-1) == 0) 
                     or (i*width+j == last))):
-                result += Robot
+                result += objects.Robot
                 has_robot = True
             else:
-                if (not has_lift and ((random.randint(0, last-1) == 1) 
+                if (not has_lift and ((random.randint(0, last-1) == 0) 
                         or (i*width+j == last-1))):
-                    result += Lift
+                    result += objects.Lift
                     has_lift = True
                 else:
-                    result += random.choice(Fields[2:-1])
+                    result += random.choice(objects.Fields[2:-1])
         result += '\n'
     if ('flooding' in properties and ( (random.random() < properties['flooding']))):
         result += '\nWaterproof %d\n' % random.randint(0, height)
@@ -35,8 +36,40 @@ def create_chaotic(height, width, properties):
     assert has_lift
     return result
 
+def create_balanced(height, width, properties):
+    world = [ [ 0 for _ in range(width) ] for _ in range(height) ]
+    def put_obj(obj):
+        while True:
+            x = random.randint(0, width-1)
+            y = random.randint(0, height-1)
+            if world[y][x] == 0:
+                break
+        world[y][x] = obj
+    put_obj(objects.Robot)
+    put_obj(objects.Lift)
+    lambda_count = int(height*width*properties['lambdas'])
+    for _ in range(lambda_count):
+        put_obj(objects.Lambda)
+    stone_count = int(height*width*properties['stones'])
+    for _ in range(stone_count):
+        put_obj(objects.Stone)
+    wall_count = int(height*width*properties['walls'])
+    for _ in range(wall_count):
+        put_obj(objects.Wall)
+    earth_to_empty = properties['earth_to_empty']
+    for y in range(height):
+        for x in range(width):
+            if world[y][x] == 0:
+                if random.random() > earth_to_empty:
+                    world[y][x] = objects.Empty
+                else:
+                    world[y][x] = objects.Earth
+    result = '\n'.join([ ''.join(world_line) for world_line in world ])
+    return result
+
 random_generator_table = {
     'chaotic' : create_chaotic, 
+    'balanced' : create_balanced
 }
 
 random_counter = 0 # utility, to differentiated generated maps by numbers
@@ -110,8 +143,16 @@ def load_our_worlds():
     
 if __name__ == '__main__':
     assert(create_some_random(0, 0, 0) == [])
-    assert(len(create_some_random(3, 1, 1)) == 3)
+    assert(len(create_some_random(3, 2, 2)) == 3)
     world = create_one_random(4, 6, {'mode' :'chaotic'})
     assert(len(world['source']) == 4*(6+1))
     assert(world['width'] == 6)
     assert(create_one_random(4,6,{})['source'] == '')
+    world = create_one_random(50, 50, {
+        'mode' : 'balanced',
+        'lambdas' : 0.05,
+        'stones' : 0.4,
+        'walls' : 0.0,
+        'earth_to_empty' : 1 
+    })
+    print world['source']
