@@ -1,3 +1,7 @@
+import sys
+sys.path.append('../production') # for pypy
+
+
 from world import World
 
 from preprocessor import reachability_step, stone_reachability_step, preprocess_world
@@ -107,12 +111,15 @@ def fuzzy_tests():
     
     for map_path in maps:
         print map_path,
+        if 'abort_immediately' in map_path:
+            print 'ignored'
+            continue
         world = World.from_file(map_path)
         
-        for i in range(50):
-            commands = ''.join(choice('LRUDW') for _ in range(randrange(1000)))
+        for i in range(500):
+            commands = ''.join(choice('LRUDW') for _ in range(randrange(2000)))
             check_preprocessor(world, commands, verbose=False)
-            if i % 5 == 0:
+            if i % 10 == 0:
                 print '.',
         print
         
@@ -121,8 +128,8 @@ def fuzzy_tests():
             
 if __name__ == '__main__':
     
-    print 'reachability step tests'
-    test_processing_step(reachability_tests, reachability_step)
+    #print 'reachability step tests'
+    #test_processing_step(reachability_tests, reachability_step)
     
     print 'stone reachability step tests'
     test_processing_step(stone_reachability_tests, stone_reachability_step)

@@ -20,19 +20,21 @@ def reachability_step(width, data):
                 # fall down
                 auto_empty[i] = True
             elif data[i+width] in '^*' and\
-                 auto_empty[i+width-1] and (data[i+width-1] in ' *'):
+                 auto_empty[i+width-1] and data[i-1] in ' *':
                 # fall left
                 auto_empty[i] = True
             elif data[i+width] in '^*\\' and\
-                 auto_empty[i+width+1] and (data[i+width+1] in ' *'):
+                 auto_empty[i+width+1] and data[i+1] in ' *':
                 # fall right
                 auto_empty[i] = True
                 
+    neighbors = [+1, -1, -width-1, -width, -width+1, +width]
+    
     def make_reachable(i):
         reachable[i] = True
-        for j in [i+1, i-1, i-width-1, i-width, i-width+1, i+width]:
-            if not reachable[j]:
-                tasks.add(j)
+        for delta in neighbors:
+            if not reachable[i+delta]:
+                tasks.add(i+delta)
     
     while tasks:
         i = tasks.pop()
@@ -41,7 +43,7 @@ def reachability_step(width, data):
         cell = data[i]
         if cell == 'R':
             make_reachable(i)
-        elif cell in ' .\\' or auto_empty[i]:
+        elif cell in ' .!\\' or auto_empty[i]:
             if reachable[i-1] or reachable[i+1] or\
                reachable[i+width] or reachable[i-width]:
                 make_reachable(i)

@@ -7,7 +7,7 @@ from itertools import *
 from world import World
 
 from preprocessor import preprocess_world
-from utils import dist, path_to_nearest_lambda
+from utils import dist, path_to_nearest_lambda_or_exit
 from upper_bound import upper_bound
 
 
@@ -37,7 +37,7 @@ def aggressive_preprocess(world):
 
     
 
-def solve(state, time_limit=5):
+def solve(state, time_limit=15):
     
     start = clock()
     
@@ -68,7 +68,7 @@ def solve(state, time_limit=5):
 
         preprocessed = preprocess_world(state)
         
-        if upper_bound(preprocessed) <= best.score:
+        if upper_bound(preprocessed)-state.time <= best.score:
             return
         
         aggressive_preprocess(preprocessed)
@@ -86,7 +86,7 @@ def solve(state, time_limit=5):
         num_commands = len(commands)
         next_steps = set()
         
-        greedy = path_to_nearest_lambda(state)
+        greedy = path_to_nearest_lambda_or_exit(state)
         if greedy is not None:
             greedy = [greedy]
         else:
@@ -145,7 +145,7 @@ if __name__ == '__main__':
     from dict_world import DictWorld
     from test_emulators import validate
     
-    map_name = 'contest3'
+    map_name = 'flood3'
     map_path = '../data/sample_maps/{}.map'.format(map_name)
     world = World.from_file(map_path)
     
