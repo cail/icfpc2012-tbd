@@ -152,11 +152,11 @@ class GeneticSolver(object):
     
     def step(self, population):
         scores, candidates = self.evaluate_and_sort(population)
-        print 'Fitness: max %d, average %d' % (scores[0], sum(scores)/float(len(scores)))
+#        print 'Fitness: max %d, average %d' % (scores[0], sum(scores)/float(len(scores)))
         
         best = candidates[:int(POPULATION_SIZE * SELECTED_FOR_BREEDING)]
-        
-        golden = [candidate.copy() for candidate in best[:3]]
+        golden = [candidate.copy() for candidate in candidates[:NUM_GOLDEN]]
+        leader = candidates[0].copy()
         
         next_generation = []
         while len(next_generation) < POPULATION_SIZE:
@@ -176,19 +176,33 @@ class GeneticSolver(object):
             next_generation.append(child)
         
         next_generation.extend(golden)
-        return next_generation
+        return (next_generation, leader)
     
-    def solve(self, timeout):
-        population = [self.generate_candidate(3) for _ in xrange(POPULATION_SIZE)]
+    def solve(self, timeout, local_timeout=10):
         start_time = time.time()
-        while True:
-            population = self.step(population)
-            if time.time() - start_time > timeout:
-                break
-
-        _, candidates = self.evaluate_and_sort(population)
-        leader = candidates[0]
-        return self.compile(leader)
+        timed_out = False
+        best_leader, best_leader_score = None, None
+        while not timed_out:
+            population = [self.generate_candidate(3) for _ in xrange(POPULATION_SIZE)]
+            last_improvement_time = start_time
+            previous_iteration_score = None
+            for i in itertools.count():
+                (population, leader) = self.step(population)
+                leader_score = self.fitness(leader)
+                if (previous_iteration_score is None) or (leader_score > previous_iteration_score):
+                    last_improvement_time = time.time()
+                previous_iteration_score = leader_score 
+                print "Iteration %d: %d" % (i, leader_score)
+                if time.time() - start_time > timeout:
+                    timed_out = True
+                    break
+                if time.time() - last_improvement_time > local_timeout:
+                    break
+            if (best_leader is None) or (leader_score > best_leader_score):
+                print "New global best: %d" % leader_score
+                best_leader = leader
+                best_leader_score = leader_score
+        return self.compile(best_leader)
 
 
 POPULATION_SIZE = 300
@@ -197,6 +211,7 @@ CROSSOVER_RATE = 0.7
 MUTATION_RATE = 0.7
 MUTATION_ATTEMPTS = 4 # stir things up a bit
 LANDMARK_GENE_CHANCE = 0.3 # generates genes that makes us go to interesting places
+NUM_GOLDEN = 3 # top N candidates are copied to the new generation unchanged 
 
 if __name__ == '__main__':
     timeout = 20
