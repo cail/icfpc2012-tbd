@@ -9,6 +9,12 @@ from world import World
 from localvalidator import validate
 
 from preprocessor import preprocess_world
+from utils import path_to_nearest_lambda
+
+
+TIME_LIMIT = 15
+
+
 
 class C(object):
     pass
@@ -63,10 +69,7 @@ def upper_bound(state):
                            dist(state.robot_coords, xy))
                     
         return 50*collectable_lambdas-state.time-max_dist
-
-
-TIME_LIMIT = 15
-
+    
 
 def solve(state):
     
@@ -87,13 +90,13 @@ def solve(state):
             
     visited = {}
     
-    def rec(state, depth):
+    def rec(state, depth, stack_size):
         if clock() - start > TIME_LIMIT:
             return
         
         s = state.get_score_abort()
         
-        if depth <= 0:
+        if depth <= 0 or stack_size <= 0:
             check(s)
             return
 
@@ -116,7 +119,16 @@ def solve(state):
         zzz = 'LRUDW'
         num_commands = len(commands)
         next_steps = set()
-        for cmds in product(zzz, zzz):
+        
+        greedy = path_to_nearest_lambda(state)
+        if greedy is not None:
+            greedy = [greedy]
+        else:
+            greedy = []
+            
+        #greedy = []
+        
+        for cmds in chain(greedy, product(zzz, zzz)):
             e = None
             new_state = state
             for cmd in cmds:
@@ -129,7 +141,11 @@ def solve(state):
                 h = hash(new_state.freeze())
                 if h not in next_steps:
                     next_steps.add(h)
-                    rec(new_state, depth-1)
+                    if cmds in greedy:
+                        new_depth = depth
+                    else:
+                        new_depth = depth-1
+                    rec(new_state, new_depth, stack_size-1)
             else:
                 check(e)
                 
@@ -139,7 +155,7 @@ def solve(state):
         
     num_states = 0
     
-    max_depth = min(50, 100000000//len(state.data))
+    max_stack_size = min(100, 100000000//len(state.data))
     
     for depth in range(1, 50):
         if clock() - start > TIME_LIMIT:
@@ -147,7 +163,7 @@ def solve(state):
         print 'depth', depth
         visited.clear() # because values for smaller depths are invalid
         assert commands == []
-        rec(state, depth)
+        rec(state, depth, max_stack_size)
         print len(visited), 'states visited'
         num_states += len(visited)
         if clock() - start > 1:
@@ -159,7 +175,7 @@ def solve(state):
         
 
 if __name__ == '__main__':
-    map_name = 'contest3'
+    map_name = 'contest10'
     map = World.from_file('../data/sample_maps/{}.map'.format(map_name))
     #map.data = filter_walls(map.data) # minimize structures for cloning etc.
     #print len(map.data), 'nonwall cells'
