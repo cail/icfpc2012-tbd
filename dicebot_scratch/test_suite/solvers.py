@@ -40,7 +40,7 @@ class vlad_search_solver:
         world_obj = world.World.from_string(src)
         solver = search.Solver(world_obj, time_limit)
         solver.solve()
-        return solver.get_best()
+        return solver.get_best()[1]
         
     pass
 
