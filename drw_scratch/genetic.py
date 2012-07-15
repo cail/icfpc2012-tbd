@@ -28,18 +28,11 @@ class Candidate(object):
             self.actions = []
         self.waits = [0] * len(self.actions)
         
-    def mutate_wait(self):
-        index = random.randrange(len(self.waits))
-        new_value = self.waits[index] + random.choice([+1, -1])
-        if new_value < 0: new_value = 1
-        self.waits[index] = new_value
-    
-    def mutate_insert(self, destination):
-        index = random.randrange(len(self.actions))
+    def insert(self, index, destination):
         self.actions.insert(index, destination)
         self.waits.insert(index, 0)
     
-    def mutate_remove(self):
+    def remove(self, index):
         index = random.randrange(len(self.actions))
         self.actions.pop(index)
         self.waits.pop(index)
@@ -99,12 +92,18 @@ class GeneticSolver(object):
         self.cache = {}
         self.mutations_generator = WeightedRandomGenerator(MUTATIONS)
 
-    def random_destination(self):
+    def random_destination(self, near=None):
         while True:
-            if random.random() < LANDMARK_GENE_CHANCE:
-                i = random.choice(self.landmarks)
+            if near is None:
+                if random.random() < LANDMARK_GENE_CHANCE:
+                    i = random.choice(self.landmarks)
+                else:
+                    i = random.randrange(len(self.world.data))
             else:
+                # Warning: this could conceivably go into infinite loop
                 i = random.randrange(len(self.world.data))
+                if pathfinder.distance(self.world, i, near) > SHORT_MOVE_DISTANCE:
+                    continue
             if self.world.data[i] != '#':
                 return i
         
@@ -117,12 +116,22 @@ class GeneticSolver(object):
             while mutation == 'remove':
                 mutation = self.mutations_generator.next()
                 
+        index = random.randrange(len(candidate))
         if mutation == 'insert':
-            candidate.mutate_insert(self.random_destination())
+            if random.random() < SHORT_MOVE_CHANCE:
+                last_destination = candidate.actions[index - 1] \
+                    if index > 0 else self.world.robot  
+                candidate.insert(index, self.random_destination(near=last_destination))
+            else:
+                candidate.insert(index, self.random_destination())
         elif mutation == 'wait':
-            candidate.mutate_wait()
+            new_value = candidate.waits[index] + random.choice([+1, -1])
+            if new_value < 0: new_value = 1
+            candidate.waits[index] = new_value
         elif mutation == 'remove':
-            candidate.mutate_remove()
+            candidate.remove(index)
+        elif mutation == 'fuzz':
+            assert False
         else:
             assert False, 'Mutation not implemented: %s' % mutation
         return candidate
@@ -238,7 +247,9 @@ MUTATION_RATE = 0.7
 MUTATION_ATTEMPTS = 4 # stir things up a bit
 LANDMARK_GENE_CHANCE = 0.3 # generates genes that makes us go to interesting places
 NUM_GOLDEN = 3 # top N candidates are copied to the new generation unchanged 
-MUTATIONS = [('insert', 2), ('wait', 1), ('remove', 1)] # weighted mutations
+MUTATIONS = [('insert', 2), ('wait', 2), ('remove', 2), ('fuzz', 0)] # weighted mutations
+SHORT_MOVE_DISTANCE = 3
+SHORT_MOVE_CHANCE = 0.5
 
 if __name__ == '__main__':
     timeout = 20
