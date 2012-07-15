@@ -77,6 +77,8 @@ class GeneticSolver(object):
         
         self.cache = {}
         self.mutations_generator = WeightedRandomGenerator(*zip(*MUTATIONS))
+        
+        #self.commands_applied = 0
 
     def random_destination(self, near=None):
         while True:
@@ -131,6 +133,7 @@ class GeneticSolver(object):
             gene_type, gene_value = gene
             if gene_type == 'wait':
                 world = world.apply_command('W')
+                #self.commands_applied += 1
                 if world.terminated:
                     break
                 world_hash = world.get_hash()
@@ -141,9 +144,11 @@ class GeneticSolver(object):
                 if cached:
                     commands, world_hash = self.cache[cache_key]
                     world = world.apply_commands(commands)
+                    #self.commands_applied += 1
                 else:
                     commands = pathfinder.commands_to_reach(world, destination)
                     world = world.apply_commands(commands)
+                    #self.commands_applied += 1
                     world_hash = world.get_hash()
                     self.cache[cache_key] = (commands, world_hash)
                 if world.terminated:
@@ -165,13 +170,18 @@ class GeneticSolver(object):
             elif gene_type == 'move':
                 destination = gene_value
                 commands = pathfinder.commands_to_reach(world, destination)
-                compiled.extend(commands)
-                world = world.apply_commands(commands)
-                if world.terminated:
-                    break
+                for c in commands:
+                    world = world.apply_command(c)
+                    compiled.append(c)
+                    if world.terminated:
+                        break
             else:
                 assert False, "Unrecognized gene: %s" % gene_type
-        compiled.append('A')
+            if world.terminated:
+                break
+
+        if not world.terminated:
+            compiled.append('A')
         return ''.join(compiled)
     
     def evaluate_and_sort(self, population):
@@ -183,9 +193,10 @@ class GeneticSolver(object):
     
     def step(self, population):
         scores, candidates = self.evaluate_and_sort(population)
-#        print 'Fitness: max %d, average %d' % (scores[0], sum(scores)/float(len(scores)))
-        
+        print 'Fitness: max %d, average %d' % (scores[0], sum(scores)/float(len(scores)))
         num_best = int(POPULATION_SIZE * SELECTED_FOR_BREEDING)
+#        for candidate in population:
+#            print self.compile(candidate)
         best = candidates[:num_best]
         best_scores = scores[:num_best]
         min_score = min(best_scores)
@@ -228,7 +239,9 @@ class GeneticSolver(object):
             last_improvement_time = start_time
             previous_iteration_score = None
             for i in itertools.count():
+                #self.commands_applied = 0
                 (population, leader) = self.step(population)
+                #print "Applied %d commands" % self.commands_applied
                 leader_score = self.fitness(leader)
                 if (previous_iteration_score is None) or (leader_score > previous_iteration_score):
                     last_improvement_time = time.time()
