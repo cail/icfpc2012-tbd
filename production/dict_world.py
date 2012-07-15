@@ -31,6 +31,8 @@ class DictWorld(WorldBase):
         'waterproof',
         'underwater', # time spend underwater
     ]
+    
+    #### World interface, kind of
 
     def __init__(self):
         self.data = {}
@@ -95,17 +97,6 @@ class DictWorld(WorldBase):
                 
         return w
     
-    @property
-    def time(self):
-        return len(self.commands)
-    
-    def water_level(self):
-        if self.flooding == 0:
-            return 0
-        return self.water+(self.time-1)//self.flooding-1
-        # time-1 because we check it in update
-        # -1 because our coords are zero-based
-    
     def get_map_string(self):
         lines = []
         for i in range(self.height):
@@ -115,11 +106,52 @@ class DictWorld(WorldBase):
     
     def show(self):
         print self.get_map_string()
-        print 'robot_coords at {}; current score is {}'.format(self.robot_coords, self.get_score_abort())
+        print 'robot_coords at {}; current score is {}'.format(self.robot_coords, self.score)
+        
+    @property        
+    def terminated(self):
+        return self.lifted or self.dead or self.aborted
+    
+    @property
+    def score(self):
+        # TODO: clarify in what order winning and drowning are tested
+        if self.lifted:
+            return self.get_score_win()
+        if self.dead:
+            return self.get_score_lose()
+        # aborted or running
+        return self.get_score_abort()
+        
+    
+    @property
+    def time(self):
+        return len(self.commands)
+    
+    @property
+    def water_level(self):
+        if self.flooding == 0:
+            return 0
+        return self.water+(self.time-1)//self.flooding-1
+        # time-1 because we check it in update
+        # -1 because our coords are zero-based
+        
+    def apply_command(self, c):
+        '''
+        return updated world
+        '''
+        assert not self.terminated
+        
+        other = deepcopy(self)
+        other.execute_command_inplace(c)
+        if other.terminated:
+            return other
+        other.update()
+        return other
+    
+    
+    #### Implementation stuff
         
     def execute_command_inplace(self, c):
-        assert c != 'A', 'according to webvalidator behavior, abort is not command'
-        
         if c == 'L':
             self.move(-1, 0)
         elif c == 'R':
@@ -130,25 +162,13 @@ class DictWorld(WorldBase):
             self.move(0, -1)
         elif c == 'W':
             pass
-        #elif c == 'A':
-        #    self.aborted = True
+        elif c == 'A':
+            self.aborted = True
+            # return immediately because A is not really a command.
+            return
         else:
             raise 'unknown command'
         self.commands.append(c)
-    
-    def apply_command(self, c):
-        '''
-        return pair (new map, final score or None)
-        '''
-        other = deepcopy(self)
-        other.execute_command_inplace(c)
-        other.update()
-        return other, other.ending()
-    
-    def freeze(self):
-        '''return immutable (hashable) state'''
-        data = frozenset(self.data.items())
-        return (data, self.time, self.aborted, self.lifted, self.dead)
         
     def move(self, dx, dy):
         ''' move robot_coords only 
@@ -182,14 +202,14 @@ class DictWorld(WorldBase):
         return False
         
     def update(self):
-        
-        if self.lifted:
-            # their web emulator does that!
-            return
-        
         _, y = self.robot_coords
-        if y <= self.water_level():
+        if y <= self.water_level:
             self.underwater += 1
+            if self.underwater > self.waterproof:
+                self.dead = True
+                return
+        else:
+            self.underwater = 0
         
         data = self.data
         u = {}
@@ -247,20 +267,6 @@ class DictWorld(WorldBase):
     def collected_lambdas(self):
         return self.total_lambdas-self.count_lambdas()
                 
-    def ending(self):
-        '''return either None or additional score'''
-        
-        # TODO: clarify in what order winning and drowning are tested
-        
-        if self.underwater > self.waterproof:
-            return 25*self.collected_lambdas-self.time
-        if self.lifted:
-            return 75*self.collected_lambdas-self.time
-        if self.aborted:
-            return 50*self.collected_lambdas-self.time
-        if self.dead:
-            return 25*self.collected_lambdas-self.time
-        
     def __getitem__(self, coords):
         return self.data.get(coords, '#')
     

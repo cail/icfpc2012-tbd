@@ -2,38 +2,43 @@ import sys
 sys.path.append('../production') # for pypy
 
 from time import clock
+from itertools import *
 
-from dual_world import DualWorld
 from world import World
-from dict_world import DictWorld
-from localvalidator import validate
-from areas import filter_walls
+
+from preprocessor import preprocess_world
+from utils import dist, path_to_nearest_lambda
+from upper_bound import upper_bound
+
 
 class C(object):
     pass
 
 
-def dist((x1, y1), (x2, y2)):
-    return abs(x1-x2)+abs(y1-y2)
 
+def aggressive_preprocess(world):
+    '''
+    inplace, because why not?
+    '''
+    #return
 
-def upper_bound(state):
-    '''
-    Upper bound on total score
-    '''
-    max_dist = 0
+    data = world.data
+    rxy = world.robot_coords
+    num_lambdas = 0
+    for i in range(len(data)):
+        xy = world.index_to_coords(i)
+        if dist(rxy, xy) > 7:
+            if data[i] == '\\':
+                num_lambdas += 1
+            data[i] = '!'
+    data.extend(['\\']*num_lambdas)
     
-    if state[state.lift_coords] == 'O':
-        max_dist = dist(state.robot_coords, state.lift_coords)
-    else:
-        for xy in state.enumerate_lambdas():
-            max_dist = max(max_dist, 
-                           dist(state.robot_coords, xy)+dist(xy, state.lift_coords))
-            
-    return 75*state.total_lambdas-state.time-max_dist
 
 
-def solve(state):
+    
+
+def solve(state, time_limit=5):
+    
     start = clock()
     
     best = C()
@@ -51,17 +56,24 @@ def solve(state):
             
     visited = {}
     
-    def rec(state, depth):
+    def rec(state, depth, stack_size):
+        if clock() - start > time_limit:
+            return
+        
         s = state.get_score_abort()
         
-        if depth <= 0:
+        if depth <= 0 or stack_size <= 0:
             check(s)
             return
 
-        if upper_bound(state) <= best.score:
+        preprocessed = preprocess_world(state)
+        
+        if upper_bound(preprocessed) <= best.score:
             return
+        
+        aggressive_preprocess(preprocessed)
 
-        frozen_state = hash(state.freeze())
+        frozen_state = preprocessed.get_hash()
         old_score = visited.get(frozen_state)
         if old_score is not None and s <= old_score:
             return
@@ -70,21 +82,53 @@ def solve(state):
         
         check(s)
         
-        for cmd in 'LRUDW':
-            commands.append(cmd)
-            new_state, e = state.apply_command(cmd)
-            if e is None:
-                rec(new_state, depth-1)
+        zzz = 'LRUDW'
+        num_commands = len(commands)
+        next_steps = set()
+        
+        greedy = path_to_nearest_lambda(state)
+        if greedy is not None:
+            greedy = [greedy]
+        else:
+            greedy = []
+            
+        #greedy = []
+        
+        for cmds in chain(greedy, product(zzz, zzz)):
+            new_state = state
+            for cmd in cmds:
+                if new_state.final_score is None:
+                    new_state = new_state.apply_command(cmd)
+                    # TODO: check()
+                commands.append(cmd)
+            
+            if new_state.final_score is None:
+                h = new_state.get_hash()
+                if h not in next_steps:
+                    next_steps.add(h)
+                    if cmds in greedy:
+                        new_depth = depth
+                    else:
+                        new_depth = depth-1
+                    rec(new_state, new_depth, stack_size-1)
             else:
-                check(e)
-            commands.pop()
+                check(new_state.final_score)
+                
+            for _ in cmds:
+                commands.pop()
+        assert num_commands == len(commands)
         
     num_states = 0
-        
-    for depth in range(1, 40, 3):
+    
+    max_stack_size = min(100, 100000000//len(state.data))
+    
+    for depth in range(1, 50):
+        if clock() - start > time_limit:
+            break
         print 'depth', depth
         visited.clear() # because values for smaller depths are invalid
-        rec(state, depth)
+        assert commands == []
+        rec(state, depth, max_stack_size)
         print len(visited), 'states visited'
         num_states += len(visited)
         if clock() - start > 1:
@@ -96,16 +140,20 @@ def solve(state):
         
 
 if __name__ == '__main__':
-    map_name = 'contest1'
-    map = DualWorld.from_file('../data/sample_maps/{}.map'.format(map_name))
-    #map.data = filter_walls(map.data) # minimize structures for cloning etc.
-    #print len(map.data), 'nonwall cells'
     
-    map.show()
+    from dual_world import DualWorld
+    from dict_world import DictWorld
+    from test_emulators import validate
+    
+    map_name = 'contest3'
+    map_path = '../data/sample_maps/{}.map'.format(map_name)
+    world = World.from_file(map_path)
+    
+    world.show()
     
     start = clock()
 
-    score, solution = solve(map)
+    score, solution = solve(world)
     
     print 'it took', clock()-start
 
@@ -113,7 +161,17 @@ if __name__ == '__main__':
     print score, solution
     
     print 'validating...',
-    validated_score, _ = validate(DualWorld, map_name, solution)
+    
+    world = DualWorld.from_file(map_path)
+    for cmd in solution:
+        world = world.apply_command(cmd)
+        if world.terminated:
+            break
+    validated_score = world.score
+    
     assert score == validated_score, (score, validated_score)
+    
+    validate(map_name, solution, World, DictWorld, DualWorld)
+    
     print 'ok'
     

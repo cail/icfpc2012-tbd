@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>dicebot_scratch</name>
+	<name>drw_scratch</name>
 	<comment></comment>
 	<projects>
-		<project>drw_scratch</project>
 		<project>production</project>
-		<project>vlad_scratch</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
