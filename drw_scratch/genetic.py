@@ -15,60 +15,46 @@ import pathfinder
 # (treating a boulder like an empty destination 
 # space does nothing more often than not)
 
+
 class Candidate(object):
     __slots__ = [
-        'actions',
-        'waits'
+        'genes',
     ]
     
     def __init__(self, destinations=None):
         if destinations:
-            self.actions = destinations
+            self.genes = [('move', destination) for destination in destinations]
         else:
-            self.actions = []
-        self.waits = [0] * len(self.actions)
+            self.genes = []
         
-    def insert(self, index, destination):
-        self.actions.insert(index, destination)
-        self.waits.insert(index, 0)
+    def insert(self, index, gene):
+        self.genes.insert(index, gene)
     
     def remove(self, index):
-        index = random.randrange(len(self.actions))
-        self.actions.pop(index)
-        self.waits.pop(index)
+        self.genes.pop(index)
 
     def copy(self):
         new_instance = Candidate()
-        new_instance.actions = self.actions[:]
-        new_instance.waits = self.waits[:]
+        new_instance.genes = self.genes[:]
         return new_instance
     
     def __len__(self):
-        return len(self.actions)
+        return len(self.genes)
         
         
 def crossover(candidate1, candidate2):
     while True: # quick fix to avoid empty offspring
-        index1 = random.randrange(len(candidate1.actions))
-        index2 = random.randrange(len(candidate2.actions))
+        index1 = random.randrange(len(candidate1))
+        index2 = random.randrange(len(candidate2))
         
         offspring = Candidate()
-        offspring.actions = candidate1.actions[:index1] + candidate2.actions[index2:]
-        offspring.waits = candidate1.waits[:index1] + candidate2.waits[index2:]
-        if len(offspring.actions) > 0:
+        offspring.genes = candidate1.genes[:index1] + candidate2.genes[index2:]
+        if len(offspring) > 0:
             return offspring    
 
-def apply_commands(world, commands):
-    assert(not world.terminated)
-    for c in commands:
-        world = world.apply_command(c)
-        if world.terminated:
-            break
-    return world
-
 class WeightedRandomGenerator(object):
-    def __init__(self, pairs):
-        self.elements, weights = zip(*pairs) 
+    def __init__(self, elements, weights):
+        self.elements = elements 
         self.totals = []
         running_total = 0
 
@@ -90,7 +76,7 @@ class GeneticSolver(object):
         self.landmarks = [i for i, c in enumerate(world.data) if c in landmark_symbols]
         
         self.cache = {}
-        self.mutations_generator = WeightedRandomGenerator(MUTATIONS)
+        self.mutations_generator = WeightedRandomGenerator(*zip(*MUTATIONS))
 
     def random_destination(self, near=None):
         while True:
@@ -117,21 +103,23 @@ class GeneticSolver(object):
                 mutation = self.mutations_generator.next()
                 
         index = random.randrange(len(candidate))
-        if mutation == 'insert':
-            if random.random() < SHORT_MOVE_CHANCE:
-                last_destination = candidate.actions[index - 1] \
-                    if index > 0 else self.world.robot  
-                candidate.insert(index, self.random_destination(near=last_destination))
-            else:
-                candidate.insert(index, self.random_destination())
-        elif mutation == 'wait':
-            new_value = candidate.waits[index] + random.choice([+1, -1])
-            if new_value < 0: new_value = 1
-            candidate.waits[index] = new_value
+        if mutation == 'insert_short_move':
+            last_destination = None
+            for i in xrange(index - 1, -1, -1):
+                if candidate.genes[i][0] == 'move':
+                    last_destination = candidate.genes[i][1]
+                    break
+            if last_destination == None:
+                last_destination = self.world.robot
+            gene = ('move', self.random_destination(near=last_destination))
+            candidate.insert(index, gene)
+        elif mutation == 'insert_long_move':
+            gene = ('move', self.random_destination())
+            candidate.insert(index, gene)
+        elif mutation == 'insert_wait':
+            candidate.insert(index, ('wait', None))
         elif mutation == 'remove':
             candidate.remove(index)
-        elif mutation == 'fuzz':
-            assert False
         else:
             assert False, 'Mutation not implemented: %s' % mutation
         return candidate
@@ -139,48 +127,56 @@ class GeneticSolver(object):
     def fitness(self, candidate):
         world = World(self.world)
         world_hash = world.get_hash()
-        for (wait, destination) in itertools.izip(candidate.waits, candidate.actions):
-            if wait > 0:
-                world = apply_commands(world, ('W' for _ in xrange(wait)))
+        for gene in candidate.genes:
+            gene_type, gene_value = gene
+            if gene_type == 'wait':
+                world = world.apply_command('W')
                 if world.terminated:
                     break
                 world_hash = world.get_hash()
-            cache_key = (world_hash, world.robot, destination)
-            cached = (cache_key in self.cache) 
-            if cached:
-                commands, world_hash = self.cache[cache_key]
-                world = apply_commands(world, commands)
+            elif gene_type == 'move':
+                destination = gene_value
+                cache_key = (world_hash, world.robot, destination)
+                cached = (cache_key in self.cache)
+                if cached:
+                    commands, world_hash = self.cache[cache_key]
+                    world = world.apply_commands(commands)
+                else:
+                    commands = pathfinder.commands_to_reach(world, destination)
+                    world = world.apply_commands(commands)
+                    world_hash = world.get_hash()
+                    self.cache[cache_key] = (commands, world_hash)
+                if world.terminated:
+                    break
             else:
-                commands = pathfinder.commands_to_reach(world, destination)
-                world = apply_commands(world, commands)
-                world_hash = world.get_hash()
-                self.cache[cache_key] = (commands, world_hash)
-            if world.terminated:
-                break
+                assert False, "Unrecognized gene: %s" % gene_type
         return world.score
     
     def compile(self, candidate):
         world = World(self.world)
         compiled = []
-        for (wait, destination) in itertools.izip(candidate.waits, candidate.actions):
-            for _ in xrange(wait):
-                compiled.append('W')
+        for gene in candidate.genes:
+            gene_type, gene_value = gene
+            if gene_type == 'wait':
                 world = world.apply_command('W')
+                compiled.append('W')
                 if world.terminated:
-                    return ''.join(compiled)
-            commands = pathfinder.commands_to_reach(world, destination)
-            for c in commands:
-                compiled.append(c)
-                world = world.apply_command(c)
+                    break
+            elif gene_type == 'move':
+                destination = gene_value
+                commands = pathfinder.commands_to_reach(world, destination)
+                compiled.extend(commands)
+                world = world.apply_commands(commands)
                 if world.terminated:
-                    return ''.join(compiled)
+                    break
+            else:
+                assert False, "Unrecognized gene: %s" % gene_type
         compiled.append('A')
         return ''.join(compiled)
     
     def evaluate_and_sort(self, population):
         scored_candidates = [(self.fitness(candidate), candidate) for candidate in population]
-        scored_candidates.sort()
-        scored_candidates.reverse()
+        scored_candidates.sort(reverse=True)
         scores = [score for (score, candidate) in scored_candidates]
         candidates = [candidate for (score, candidate) in scored_candidates]
         return (scores, candidates)
@@ -189,31 +185,41 @@ class GeneticSolver(object):
         scores, candidates = self.evaluate_and_sort(population)
 #        print 'Fitness: max %d, average %d' % (scores[0], sum(scores)/float(len(scores)))
         
-        best = candidates[:int(POPULATION_SIZE * SELECTED_FOR_BREEDING)]
-        golden = [candidate.copy() for candidate in candidates[:NUM_GOLDEN]]
+        num_best = int(POPULATION_SIZE * SELECTED_FOR_BREEDING)
+        best = candidates[:num_best]
+        best_scores = scores[:num_best]
+        min_score = min(best_scores)
+        if min_score < 0:
+            weights = [score - min_score for score in best_scores]
+        else:
+            weights = best_scores
+        random_candidate = WeightedRandomGenerator(candidates, weights)
+        elite = [candidate.copy() for candidate in candidates[:NUM_ELITE]]
         leader = candidates[0].copy()
         
         next_generation = []
         while len(next_generation) < POPULATION_SIZE:
+            #parent1 = random_candidate.next()
+            #parent2 = random_candidate.next()
             parent1 = random.choice(best)
             parent2 = random.choice(best)
             while parent2 != parent1:
                 parent2 = random.choice(best)
+#                parent2 = random_candidate.next()
             
             if random.random() < CROSSOVER_RATE:
                 child = crossover(parent1, parent2)
             else:
                 child = parent1.copy()
-            
-            for _ in xrange(MUTATION_ATTEMPTS):
-                if random.random() < MUTATION_RATE:
-                    child = self.mutate(child)
+                for _ in xrange(MUTATION_ATTEMPTS):
+                    if random.random() < MUTATION_RATE:
+                        child = self.mutate(child)
             next_generation.append(child)
         
-        next_generation.extend(golden)
+        next_generation.extend(elite)
         return (next_generation, leader)
     
-    def solve(self, timeout, local_timeout=10):
+    def solve(self, timeout, local_timeout=15):
         start_time = time.time()
         timed_out = False
         best_leader, best_leader_score = None, None
@@ -241,15 +247,16 @@ class GeneticSolver(object):
 
 
 POPULATION_SIZE = 300
-SELECTED_FOR_BREEDING = 0.2
+SELECTED_FOR_BREEDING = 0.1
 CROSSOVER_RATE = 0.7
 MUTATION_RATE = 0.7
-MUTATION_ATTEMPTS = 4 # stir things up a bit
+MUTATION_ATTEMPTS = 15 # stir things up a bit
 LANDMARK_GENE_CHANCE = 0.3 # generates genes that makes us go to interesting places
-NUM_GOLDEN = 3 # top N candidates are copied to the new generation unchanged 
-MUTATIONS = [('insert', 2), ('wait', 2), ('remove', 2), ('fuzz', 0)] # weighted mutations
+NUM_ELITE = 3 # top N candidates are copied to the new generation unchanged 
+MUTATIONS = [('insert_long_move', 10), ('insert_short_move', 10),\
+              ('insert_wait', 5), ('remove', 20),] # weighted mutations
 SHORT_MOVE_DISTANCE = 3
-SHORT_MOVE_CHANCE = 0.5
+#SHORT_MOVE_CHANCE = 0.3
 
 if __name__ == '__main__':
     timeout = 20
