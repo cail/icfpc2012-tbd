@@ -41,7 +41,9 @@ class Candidate(object):
     def __len__(self):
         return len(self.genes)
         
-        
+class TimeOut(Exception):
+    pass
+
 def crossover(candidate1, candidate2):
     while True: # quick fix to avoid empty offspring
         index1 = random.randrange(len(candidate1))
@@ -130,6 +132,8 @@ class GeneticSolver(object):
         world = World(self.world)
         world_hash = world.get_hash()
         for gene in candidate.genes:
+            if time.time() > self.deadline:
+                raise TimeOut
             gene_type, gene_value = gene
             if gene_type == 'wait':
                 world = world.apply_command('W')
@@ -203,28 +207,16 @@ class GeneticSolver(object):
     def step(self, population):
         scores, candidates = self.evaluate_and_sort(population)
         num_best = int(POPULATION_SIZE * SELECTED_FOR_BREEDING)
-#        for candidate in population:
-#            print self.compile(candidate)
         best = candidates[:num_best]
-#        best_scores = scores[:num_best]
-#        min_score = min(best_scores)
-#        if min_score < 0:
-#            weights = [score - min_score for score in best_scores]
-#        else:
-#            weights = best_scores
-#        random_candidate = WeightedRandomGenerator(candidates, weights)
         elite = [candidate.copy() for candidate in candidates[:NUM_ELITE]]
         leader = candidates[0].copy()
         
         next_generation = []
         while len(next_generation) < POPULATION_SIZE:
-            #parent1 = random_candidate.next()
-            #parent2 = random_candidate.next()
             parent1 = random.choice(best)
             parent2 = random.choice(best)
             while parent2 != parent1:
                 parent2 = random.choice(best)
-#                parent2 = random_candidate.next()
             
             if random.random() < CROSSOVER_RATE:
                 child = crossover(parent1, parent2)
@@ -246,37 +238,35 @@ class GeneticSolver(object):
         start_time = time.time()
         timed_out = False
         
-        self.best, self.best_score = None, None
+        self.best, self.best_score = 'A', None
         
-        self.deadline = start_time + running_time        
-        while not timed_out:
-            population = [self.generate_candidate(INITIAL_LENGTH) \
-                          for _ in xrange(POPULATION_SIZE)]
-            last_improvement_time = start_time
-            previous_iteration_score = None
-            for i in itertools.count():
-                #self.commands_applied = 0
-                (population, leader) = self.step(population)
-                #print "Applied %d commands" % self.commands_applied
-                leader_score = self.fitness(leader)
-                if (previous_iteration_score is None) or \
-                    (leader_score > previous_iteration_score):
-                    last_improvement_time = time.time()
-                previous_iteration_score = leader_score 
-                if verbose:
-                    print "Iteration %d: %d" % (i, leader_score)
-                if time.time() > self.deadline:
-                    timed_out = True
-                    break
-                if convergence_time > 0 and \
-                    (time.time() - last_improvement_time > convergence_time):
-                    break
-            if (self.best_score is None) or (leader_score > self.best_score):
-                if verbose:
-                    print "New global best: %d" % leader_score
-                self.best = self.compile(leader)
-                self.best_score = leader_score
-        #return self.compile(self.best)
+        self.deadline = start_time + running_time
+                
+        try:
+            while True:
+                population = [self.generate_candidate(INITIAL_LENGTH) \
+                              for _ in xrange(POPULATION_SIZE)]
+                last_improvement_time = start_time
+                previous_iteration_score = None
+                for i in itertools.count():
+                    (population, leader) = self.step(population)
+                    leader_score = self.fitness(leader)
+                    if (previous_iteration_score is None) or \
+                        (leader_score > previous_iteration_score):
+                        last_improvement_time = time.time()
+                    previous_iteration_score = leader_score 
+                    if verbose:
+                        print "Iteration %d: %d" % (i, leader_score)
+                    if convergence_time > 0 and \
+                        (time.time() - last_improvement_time > convergence_time):
+                        break
+                    if (self.best_score is None) or (leader_score > self.best_score):
+                        if verbose:
+                            print "New global best: %d" % leader_score
+                        self.best = self.compile(leader)
+                        self.best_score = leader_score
+        except TimeOut:
+            pass
         return self.best
 
     def get_best(self):
