@@ -1,27 +1,55 @@
-import sys
+import sys, time
+import world
 from test_emulators import validate, validate_custom, run_interactively, time_execution_print
 from test_emulators import world_classes, official_map_file_name
-from test_emulators import World, VorberWorld, DictWorld
+from test_emulators import World, VorberWorld, DictWorld#, WorldFast
 
-validate('contest8', 'RRRRRRRULD', [VorberWorld, World])
+#validate('contest8', 'RRRRRRRULD', [VorberWorld, World])
+#print 'yo'
+#sys.exit()
 
-print 'yo'
-
-sys.exit()
+world10_commands = '''
+UUUUUUUULLUULLLUUUUUUUUUUULLLLLLLLLLLLRRRRRRRRRRRRDDDDDDDDDDDRRRDDRRDDDDDDDDUUUUUUUULLUULLLUUUUUURRRRRUA
+UUUULLLLULLLLLLLDLLLUULLUUUUUUUUUULLLLLLLULUURRRRRRRDDDRRRRRRRDRRRRRDDDDDRRRDDRRDDDDDA
+UUUUUUUULLLLLLLLLLLLLUULUUULLLLLLLLLUULLRDDDDDLLDDDDRRRDDRRRD
+UUUUUUUULLUULLLUUUUUUUUUUULLLLLLLLLLLRRRRRRDDDDDDRRRRDDDDDDDDDRRRDDRRDDLLLLDDLLLLLLLLLLLUULLLLLLLLLA
+ULLLLLDLLLLLLLLLLLULRDRRRRRRRRRRRUURRLLDDLLUUULLLLLLA
+UUUUUUUULLUULLLUUUUUUUUUDDDDDDDDDDDLDDRRDDRRRDDLLLA
+UUUUUUUULLLLLLLLLLLLLUULUUULLLLLLLLLUULLLURRRRRRRRRRRUUUURRRRRRDDA
+UUUUUUUULLUULLLUULLLLLLLDDLLLLLLLLDD
+ULLLLLDLLLLLLLLLLLUUUULLLRUUUUUURRRRRRURRURRDDUUURRURRRRRRA
+UUUUUUUULLUULLLUUUUULLLLLUURRRUDLLLDDRRRRRDDDDDRRRDDRRDDDDDUUUUULLUULLLUUUUULLLLLULLLLLLLUUUULLULLLLDA
+UUUUUUUULLLLLLLLLLLLLUULLLLLLDDDDUUUUUUURUUUUUA
+UUUUUUUULLUULLLUUUUUUUUUULLLLLLLLLDDDDDDDDDDDDLLDDRRDDDUUULLUUA
+UUUUUUUULLUULLRRDDRRDDDUUULLUULLLUUUUULLLLLULLLLLLA
+A
+ULLLLLDLLUUULLLLLLLUUULLUUURRUUUUUUULLLLLLLLLULUUA
+UUUUULLLLLLLLLLDDDDUUUUURUULLLLLA
+UUUUUUUULLLLLLLLLLLLLUULUUULLLLLLLLLUULLLRRRDDRRRRRRRDDDDDDDRRRRRRRRRRRRRRRDA
+ULLDUULLLRRRRRDDDA
+UUUUUUUULLUULLLUUUUUUUUUUURRLLLLLLLLLLLLLLDDDDDDDDDDDDDDDDDDDDDUUUUUUUUUUUUUUUUUUULLLLA
+UULLLLLDDLLLLLLLLLLLUUUULLLLLLLUULLLUUUURUURUUUUUUUURA
+'''.split()
 
 test_suite = [
-#            ('contest6', 'RUULRRRRRRRRRRUUULLLLLLLDLLLUUUUUURULURR'),
+            ('contest6', 'RUULRRRRRRRRRRUUULLLLLLLDLLLUUUUUURULURR'),
             ('contest8', 'RRRRRRRULD'),
-            
             ]
-time_execution_print(World, test_suite)
-time_execution_print(World, test_suite)
-time_execution_print(DictWorld, test_suite)
-time_execution_print(DictWorld, test_suite)
-time_execution_print(VorberWorld, test_suite)
-time_execution_print(VorberWorld, test_suite)
+test_suite.extend(('contest10', cmd) for cmd in world10_commands)
 
-#from test_emulators import validate, validate_custom, world_classes
+t_start = time.time()
+time_execution_print(World, test_suite, chunk_size = 100)
+time_execution_print(World, test_suite, chunk_size = 100)
+
+
+#time_execution_print(WorldFast, test_suite, chunk_size = 1)
+#time_execution_print(WorldFast, test_suite, chunk_size = 1)
+
+#time_execution_print(DictWorld, test_suite, chunk_size = 1)
+#time_execution_print(DictWorld, test_suite, chunk_size = 1)
+#time_execution_print(VorberWorld, test_suite, chunk_size = 1)
+#time_execution_print(VorberWorld, test_suite, chunk_size = 1)
+
 
 #world_classes.remove(VorberWorld)
 #validate_custom('../data/maps_manual/push2.map', 'LLWDDLWDWDWDDLLUURLRRUUUUUULLLLLLLLRRRRRRRRRRR'
@@ -30,6 +58,6 @@ time_execution_print(VorberWorld, test_suite)
 #map_name = 'flood1'
 #path = run_interactively(VorberWorld.from_file(official_map_file_name(map_name)))
 
-#path = run_interactively(DictWorld.from_file('../data/maps_manual/push2.map'), 'LLWDDLWDWDWDDL')
+#path = run_interactively(World.from_file(official_map_file_name('trampoline1')))
 
-print 'yo'
+print 'yo {:0.1f}'.format(world.application_counter / (time.time() - t_start))

@@ -1,14 +1,40 @@
-import warnings
+from copy import copy
 from itertools import imap
 
 from world_base import WorldBase
 import pprint
 
+application_counter = 0
 
+TRAMPOLINE_SOURCE_LETTERS = set('ABCDEFGHI')
+TRAMPOLINE_TARGET_LETTERS = set('123456789')
+TRAMPOLINE_LETTERS = TRAMPOLINE_SOURCE_LETTERS | TRAMPOLINE_TARGET_LETTERS
+VALID_MAP_CHARACTERS = set('R#.*\\LO \n') | TRAMPOLINE_LETTERS  
+ 
 def find_single_item(data, value):
     idx = data.index(value)
     assert all(c != value for c in data[idx + 1:])
     return idx
+
+def enhance_trampoline_mapping(mapping, data):
+    '''Convert { src : dst } to { src : (dst_idx, [src_idx]) }
+    
+    >>> sorted(enhance_trampoline_mapping({'A' : '2', 'B' : '2', 'C' : '1'}, '_21CBA').iteritems())
+    [('A', (1, [5, 4])), ('B', (1, [5, 4])), ('C', (2, [3]))]
+    '''
+    trampolines = dict((c, (idx, []))
+                       for idx, c in enumerate(data)
+                       if c in TRAMPOLINE_LETTERS)
+
+    for src, dst in mapping.iteritems():
+        trampolines[dst][1].append(trampolines[src][0])
+    
+    return dict((src, (trampolines[dst][0], trampolines[dst][1]))
+                for src, dst in mapping.iteritems())
+                    
+                
+                
+    
     
 class World(WorldBase):
     '''
@@ -28,6 +54,7 @@ class World(WorldBase):
         'water',
         'flooding',
         'waterproof',
+        'trampolines',
         # stuff above could be shared between instances.
         'data',     # 1d array
         'robot',    # index in the 1d array
@@ -48,8 +75,9 @@ class World(WorldBase):
             self.water = other.water
             self.flooding = other.flooding
             self.waterproof = other.waterproof
+            self.trampolines = other.trampolines
         
-            self.data = other.data[:]
+            self.data = copy(other.data)
             self.robot = other.robot
             self.collected_lambdas = other.collected_lambdas
             self.time = other.time
@@ -60,7 +88,7 @@ class World(WorldBase):
     def from_string(World, src):
         src, _, metadata = src.partition('\n\n')
         try:
-            assert all(c in 'R#.*\\LO \n' for c in src)
+            assert all(c in VALID_MAP_CHARACTERS for c in src)
         except AssertionError:
             print src
             raise
@@ -93,21 +121,23 @@ class World(WorldBase):
         world.time = 0
         world.final_score = None
         
-        trampoline_targets = {}
+        trampoline_mapping = {}
         metadict = {}
         for key, value in (line.split(' ', 1) for line in metadata.split('\n') if line):
             if key.upper() == 'TRAMPOLINE':
                 src, _, trg = value.partition(' targets ')
                 src, trg = [s.strip().upper() for s in (src, trg)]
                 assert src and trg
-                trampoline_targets[src] = trg
+                trampoline_mapping[src] = trg
             else:
                 metadict[key] = value
-            
+        
+                
         world.water = int(metadict.get('Water', 0))
         world.flooding = int(metadict.get('Flooding', 0))
         world.waterproof = int(metadict.get('Waterproof', 10))
         world.time_underwater = 0
+        world.trampolines = enhance_trampoline_mapping(trampoline_mapping, world.data)
         
         return world
     
@@ -141,6 +171,8 @@ class World(WorldBase):
         return self.water + (self.time - 1) // self.flooding 
 
     def apply_command(self, command):
+        global application_counter
+        application_counter += 1
         assert not self.terminated
         
         new_world = World(self)
@@ -180,13 +212,24 @@ class World(WorldBase):
                 new_data[new_robot + direction] = '*'                
                 new_data[new_robot] = 'R'
                 new_data[robot] = ' '
+            elif new_cell == '*' and command in 'LR' and data[new_robot + direction] == ' ':
+                new_data[new_robot + direction] = '*'                
+                new_data[new_robot] = 'R'
+                new_data[robot] = ' '
+            elif new_cell in self.trampolines:
+                destination, sources = self.trampolines[new_cell]
+                new_robot = destination
+                new_data[robot] = ' '
+                new_data[new_robot] = 'R'
+                for src in sources:
+                    new_data[src] = ' '
             else:
 #                warnings.warn('Action failed!')
                 new_robot = robot
         if new_robot != robot:
             # another copy :( at least it's temporary
             data = new_data
-            new_world.data = new_data = new_data[:]
+            new_world.data = new_data = copy(new_data)
             new_world.robot = new_robot
             
         if new_robot >= len(data) - width * (new_world.water_level + 1):

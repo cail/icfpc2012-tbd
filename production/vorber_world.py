@@ -1,4 +1,6 @@
+from copy import deepcopy 
 from world_base import WorldBase
+
 class VorberWorld(WorldBase):
     Empty = " "
     Earth = "."
@@ -48,10 +50,11 @@ class VorberWorld(WorldBase):
 
     def apply_command(self, c):
         assert not self.terminated
-        self.move_player(c)
-        if not self.terminated:
-            self.update()
-        return self
+        new_world = deepcopy(self)
+        new_world.move_player(c)
+        if not new_world.terminated:
+            new_world.update()
+        return new_world
 
     #end interface stuff
 
@@ -148,8 +151,6 @@ class VorberWorld(WorldBase):
             elif value == VorberWorld.Empty:
                 if self.get(x,y) == VorberWorld.Beard:
                     self.set(x,y, VorberWorld.Empty)
-        else:
-            print x, y, "onoes", self.get(x,y)
 
     def update_cell(self, x, y):
         t = self.get(x,y)
@@ -172,19 +173,16 @@ class VorberWorld(WorldBase):
                 target = (x-1,y-1)
                 fallen = True
             if self.get(x,y-1) == VorberWorld.Lambda and self.get(x+1, y) == VorberWorld.Empty and self.get(x+1, y-1) == VorberWorld.Empty:
-               self.set(x,y,VorberWorld.Empty)
-               self.set(x+1,y-1, t)
-               target.append((x+1, y-1))
-               fallen = True
+                self.set(x,y,VorberWorld.Empty)
+                self.set(x+1,y-1, t)
+                target.append((x+1, y-1))
+                fallen = True
             if fallen:
                 self.check_dead()
             if t == VorberWorld.LRock and fallen:
-                print "FALLEN!", target
                 tx,ty = target[0]
                 d = self.get(tx,ty-1)
-                print d
                 if d not in [None, VorberWorld.Empty]:
-                    print tx, ty
                     self.set(tx, ty ,VorberWorld.Lambda)
 
 
@@ -287,16 +285,16 @@ class VorberWorld(WorldBase):
                 self.set_in_world(old_x, old_y, VorberWorld.Empty)
             if tv is not None and tv in VorberWorld.Trampoline:
                 dest = self.trampolines[tv]
-                print "dest: ", dest
                 idx = self.new_world.index(dest)
-                self.new_world[idx] = VorberWorld.Robot
+                self.world[idx] = self.new_world[idx] = VorberWorld.Robot
                 self.robot_x = idx % self.width
                 self.robot_y = idx / self.width
                 self.set_in_world(old_x, old_y, VorberWorld.Empty)
                 for t in self.trampolines.keys():
                     if self.trampolines[t] == dest:
                         self.trampolines.pop(t)
-                        self.new_world[self.world.index(t)] = VorberWorld.Empty
+                        idx = self.world.index(t) 
+                        self.world[idx] = self.new_world[idx] = VorberWorld.Empty
 
             if tv in VorberWorld.RockTypes and old_x + 1 == new_x and old_y == new_y and self.check_range(old_x+2, old_y) and self.get(old_x+2, old_y) == VorberWorld.Empty:
                 self.robot_x = new_x

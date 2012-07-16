@@ -1,3 +1,4 @@
+import string
 from collections import defaultdict
 import webvalidator
 import re
@@ -36,16 +37,19 @@ tests = [
     ('flood1', 'LLLLLLDDDRUWWWWWWWWWWWWWWWWWWWWWWWWWWL'), # drowning happens after the update     
     ('flood1', 'LLLLLLDDDRUWWWWWWWWWWWWWWWWWWWWWWWWWWD'), # update doesn't prevent drowning
 
-    ('../data/maps_manual/push2.map', 'LLWDDLWDWDWDDLLUURLRRUUUUUULLLLLLLLRRRRRRRRRRR')
+    ('../data/maps_manual/push2.map', 'LLWDDLWDWDWDDLLUURLRRUUUUUULLLLLLLLRRRRRRRRRRR'),
+    
+    ('trampoline1', 'RRLDDRRRUULDLLLURRRRRRDD'), # trampolines
     
     # Pls add your own tests everyone, especially for interesting cases
     ]
 
 from world import World
+#from world_fast import WorldFast
 from dict_world import DictWorld
 from dual_world import DualWorld
 from vorber_world import VorberWorld
-world_classes = [World, DictWorld, DualWorld, VorberWorld] 
+world_classes = [World, VorberWorld] #  WorldFast, DictWorld, DualWorld 
 
 class WebValidatorProxy(object):
     def __init__(self, map_name, commands):
@@ -86,7 +90,10 @@ def validate_internal(map_data, commands, web_map_name, world_classes):
     Return True if no deviations were found.
     '''
     def format_world_state(world):
-        return '{}\nScore:{!r}'.format(world.get_map_string(), world.score)
+        # fucking trampoline hack
+        map_string = world.get_map_string()
+        map_string = map_string.translate(string.maketrans('ABCDEFGHI123456789', 'TTTTTTTTTttttttttt')) 
+        return '{}\nScore:{!r}'.format(map_string, world.score)
     
     def check_worlds(worlds, commands, prev_world, always_webvalidate = False):
         result_dict = defaultdict(list)
@@ -125,7 +132,6 @@ def validate_internal(map_data, commands, web_map_name, world_classes):
         
         for i, c in enumerate(commands):
             prev_world = worlds[0]
-            _ = [world.apply_command(c) for world in worlds]
             worlds = [world.apply_command(c) for world in worlds]
             if not check_worlds(worlds, commands[:i+1], prev_world): return False
             terminated, not_terminated = [], []
@@ -212,15 +218,13 @@ def run_interactively(world, initial_commands=''):
 def time_execution(world, instantiated_tests, chunk_size=100):
     '''returns average apply_command iterations per second'''
     start_time = time.time()
-    score = 0
     command_cnt = 0
     for _ in xrange(10000):
         for _ in xrange(chunk_size):
             for world, commands in instantiated_tests:
                 for c in commands:
                     world = world.apply_command(c)
-                score += world.score
-                command_cnt += len(commands)
+                command_cnt += len(commands) 
         delta = time.time() - start_time
         if delta > 1:
             return command_cnt / delta
