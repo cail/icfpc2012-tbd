@@ -1,5 +1,7 @@
-from types import FunctionType
+import traceback
 
+from types import FunctionType
+import logging
 
 # TODO: set it to True in submission
 
@@ -14,15 +16,15 @@ def failsafe(default=None):
     #     ...
      
     def decorator(f):
-        if MASK_ERRORS:
-            def safe_f(*args, **kwargs):
-                try:
-                    return f(*args, **kwargs)
-                except:
-                    return default
-            return safe_f
-        else:
-            return f
+        def decorated_f(*args, **kwargs):
+            try:
+                return f(*args, **kwargs)
+            except:
+                logging.warning('Error masked in {}'.format(f))
+                if not MASK_ERRORS:
+                    raise
+                return default
+        return decorated_f
     return decorator
 
 

@@ -1,5 +1,5 @@
 from utils import dist, enumerate_paths_to_goals
-
+from mask_errors import failsafe
 
 
 def salesman_lower_bound_naive(world, need_exit=True):
@@ -56,6 +56,7 @@ def salesman_lower_bound_(world, need_exit=True):
     return max_dist
 
 
+@failsafe(default=0)
 def salesman_lower_bound(world, need_exit=True):
     walkable = ' .!*\\R' # TODO: all allowed chars except # and ^
     

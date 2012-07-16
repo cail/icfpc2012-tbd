@@ -1,4 +1,5 @@
 from world import World
+from mask_errors import failsafe
 
 
 def reachability_step(width, data):
@@ -157,6 +158,13 @@ def stone_reachability_step(width, data):
 
 
 def preprocess_world(world):
+    result = preprocess_world_(world)
+    if result is not None:
+        return result
+    return world
+
+@failsafe(default=None)
+def preprocess_world_(world):
     '''
     return simplified version of the world
     
