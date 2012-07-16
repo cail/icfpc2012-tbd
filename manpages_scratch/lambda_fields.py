@@ -1,11 +1,8 @@
 import logging
-from collections import defaultdict
 from world import World
 from heapq import heappush, heappop
-from vorber_world import VorberWorld
-import pprint
 
-class LambdaFields:
+class LambdaFields(object):
     # fields: [(int LambdaCoordinate, [int] LambdaField)]
         # list of individual fields produced by each lambda
         # LambdaCoordinate is the 1d coordinate of lambda in the world
@@ -14,10 +11,6 @@ class LambdaFields:
     __slots__ = [ 'fields'
                  ,'world' 
     ]
- 
-    @property
-    def brightness(self):
-        return 25+len(self.world.data)
  
     def __init__(self, world):
         self.world = world
@@ -28,7 +21,7 @@ class LambdaFields:
    
     def calculate_field(self, source):
         # list of length of world's data filled with large enough number
-        field = [10 * len(world.data)] * len(world.data)
+        field = [10 * len(self.world.data)] * len(self.world.data)
         # the lambda ray source
         field[source] = 0
         # very mutable front, emulated with heapq
@@ -37,11 +30,11 @@ class LambdaFields:
         #logic for wave distribution
         while front:
             t, x = heappop(front)
-            pprint.pprint(('x->ix:', (x, '->', world.data[x])))
-            pprint.pprint(self.incident_cells(x, world))
-            for ix in self.incident_cells(x, world):
+            #pprint.pprint(('x->ix:', (x, '->', self.world.data[x])))
+            #pprint.pprint(self.incident_cells(x, self.world))
+            for ix in self.incident_cells(x):
                 # boundaries
-                if not (0 <= ix < len(world.data)):
+                if not (0 <= ix < len(self.world.data)):
                     continue 
                 # already visited
                 if field[ix] <= t:
@@ -49,8 +42,8 @@ class LambdaFields:
                 # another brick in the wall
                 if self.world.data[ix] in '#':
                     continue
-                passing_time = self.wave_passing_time(world.data[ix], t)
-                pprint.pprint(passing_time)
+                passing_time = self.wave_passing_time(self.world.data[ix], t)
+                #pprint.pprint(passing_time)
                 if passing_time != 0:
                     field_potential = (passing_time, ix)
                     # been there. did better.
@@ -62,12 +55,12 @@ class LambdaFields:
         return field
     
     # cells that are to be considered incident to the given cell 
-    def incident_cells(self, x, world):
+    def incident_cells(self, x):
         for _, (to, ix) in self.world.trampolines.iteritems():
             if x == to:
                 return ix
         else:
-            return [ix for ix in [x+1, x-1, x+world.width, x-world.width]]
+            return [ix for ix in [x+1, x-1, x+self.world.width, x-self.world.width]]
     
     # speed of lambda waves in the medium
     def wave_passing_time(self, cell, time):
@@ -94,11 +87,15 @@ class LambdaFields:
             result += ffs[1][index]
         return result
     
+    @property
+    def infty(self):
+        10 * len(self.world.data)
+    
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     #world = World.from_file('../data/maps_manual/the_best.map')
-    world = World.from_file('../data/maps_manual/lambda_wave1.map')
-    #world = World.from_file('../data/maps_manual/tricky.map')
+    #world = World.from_file('../data/maps_manual/lambda_wave1.map')
+    world = World.from_file('../data/maps_random/mp_random1.map')
     #vorber_world = VorberWorld.from_file('../data/maps_manual/lambda_wave1.map')
     #vorber_world = VorberWorld.from_file('../data/maps_manual/tricky.map')
     lambda_fields = LambdaFields(world)
