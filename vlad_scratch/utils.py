@@ -77,8 +77,7 @@ def interesting_actions(world):
     data = world.data
     width = world.width
         
-    # TODO: lambda rocks?
-    if data[world.robot-width] == '*' and data[world.robot+width] not in 'O':
+    if data[world.robot-width] in '*@' and data[world.robot+width] not in 'O':
         data[world.robot+width] = '#'
         # never go down when under a rock!
     
@@ -90,7 +89,7 @@ def interesting_actions(world):
         actions.append((9, idx, path))
         
     
-    eatable = '.!\\'
+    eatable = ' .!\\'
     
     for i in range(world.width, len(data)):
         if data[i-width] in '*@' and data[i] in eatable:
@@ -103,16 +102,25 @@ def interesting_actions(world):
             if left:
                 data[i+1] = '<'
         
-    # TODO: trampolines?
-    
     #world.show()
         
     walkable = ' .!\\<>_'
     
-    interesting = '_<>\\'
+    interesting = '_<>\\ABCDEFGHI'
     for idx, path in enumerate_paths_to_goals(world, world.robot, walkable, interesting):
+        priority = 0
+        if data[idx] == '_' and data[idx-width] == '@':
+            priority = 8
+        if data[idx] == '>':
+            if data[idx+1] == '@':
+                priority = 4
+            path += 'R'
+        if data[idx] == '<':
+            if data[idx-1] == '@':
+                priority = 4
+            path += 'L'
         if not actions or actions[0][2] != path:
-            actions.append((0, idx, path))
+            actions.append((priority, idx, path))
 
     #for a in actions:
     #    print a, data[a[1]]
@@ -145,7 +153,9 @@ if __name__ == '__main__':
 
     from preprocessor import preprocess_world
     
-    world = World.from_file('../data/sample_maps/contest10.map')
+    #world = World.from_file('../data/sample_maps/trampoline3.map')
+    
+    world = World.from_file('../data/maps_manual/horo2.map')
     
     world.show()
     
