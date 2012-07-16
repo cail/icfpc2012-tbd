@@ -1,0 +1,2 @@
+#!/bin/sh
+tar -xjf pypy-1.9-linux.tar.bz2
