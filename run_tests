@@ -1,0 +1,3 @@
+#!/bin/sh
+(cd src && ../pypy-1.8/bin/pypy test_emulators.py)
+(cd src && ../pypy-1.8/bin/pypy test_preprocessor.py)

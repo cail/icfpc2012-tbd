@@ -1,0 +1,2 @@
+#!/bin/sh
+(cd src && ../pypy-1.8/bin/pypy entry_point.py)
