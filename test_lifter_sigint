@@ -1,0 +1,2 @@
+#!/bin/sh
+./lifter < data/sample_maps/contest10.map > solution
