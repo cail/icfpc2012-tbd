@@ -72,7 +72,7 @@ class WeightedRandomGenerator(object):
 class GeneticSolver(object):
     def __init__(self, world):
         self.world = world
-        landmark_symbols = ['\\', 'L'] + map(chr, range(ord('A'), ord('A')+9))
+        landmark_symbols = ['\\', 'L', '!'] + map(chr, range(ord('A'), ord('A')+9))
         self.landmarks = [i for i, c in enumerate(world.data) if c in landmark_symbols]
         
         self.cache = {}
@@ -133,7 +133,6 @@ class GeneticSolver(object):
             gene_type, gene_value = gene
             if gene_type == 'wait':
                 world = world.apply_command('W')
-                #self.commands_applied += 1
                 if world.terminated:
                     break
                 world_hash = world.get_hash()
@@ -143,16 +142,23 @@ class GeneticSolver(object):
                 cached = (cache_key in self.cache)
                 if cached:
                     commands, world_hash = self.cache[cache_key]
-                    world = world.apply_commands(commands)
-                    #self.commands_applied += 1
                 else:
                     commands = pathfinder.commands_to_reach(world, destination)
-                    world = world.apply_commands(commands)
-                    #self.commands_applied += 1
+
+                #world = world.apply_commands(commands)
+
+                for c in commands:
+                    direction = [-world.width, world.width, -1, 1]['UDLR'.index(c)]
+                    if world.data[world.robot + direction] == 'W' and world.razors > 0:
+                        world = world.apply_command('S')
+                        if world.terminated: break
+                    world = world.apply_command(c)
+                    if world.terminated: break
+
+                if not cached:
                     world_hash = world.get_hash()
                     self.cache[cache_key] = (commands, world_hash)
-                if world.terminated:
-                    break
+                if world.terminated: break
             else:
                 assert False, "Unrecognized gene: %s" % gene_type
         return world.score
@@ -165,16 +171,19 @@ class GeneticSolver(object):
             if gene_type == 'wait':
                 world = world.apply_command('W')
                 compiled.append('W')
-                if world.terminated:
-                    break
+                if world.terminated: break
             elif gene_type == 'move':
                 destination = gene_value
                 commands = pathfinder.commands_to_reach(world, destination)
                 for c in commands:
+                    direction = [-world.width, world.width, -1, 1]['UDLR'.index(c)]
+                    if world.data[world.robot + direction] == 'W' and world.razors > 0:
+                        world = world.apply_command('S')
+                        compiled.append('S')
+                        if world.terminated: break
                     world = world.apply_command(c)
                     compiled.append(c)
-                    if world.terminated:
-                        break
+                    if world.terminated: break
             else:
                 assert False, "Unrecognized gene: %s" % gene_type
             if world.terminated:
@@ -229,7 +238,7 @@ class GeneticSolver(object):
         next_generation.extend(elite)
         return (next_generation, leader)
     
-    def solve(self, running_time=150, convergence_time=0, verbose=False):
+    def solve(self, running_time=150, convergence_time=10, verbose=False):
         ''' Make multiple attemts at solving the map, returning the best solution.
         
             The function will run for running_time seconds. Population is discarded
