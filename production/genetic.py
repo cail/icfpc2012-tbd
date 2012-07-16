@@ -74,7 +74,7 @@ class WeightedRandomGenerator(object):
 class GeneticSolver(object):
     def __init__(self, world):
         self.world = world
-        landmark_symbols = ['\\', 'L', '!'] + map(chr, range(ord('A'), ord('A')+9))
+        landmark_symbols = ['\\', 'L', '!', '@'] + map(chr, range(ord('A'), ord('A')+9))
         self.landmarks = [i for i, c in enumerate(world.data) if c in landmark_symbols]
         
         self.cache = {}
@@ -84,6 +84,8 @@ class GeneticSolver(object):
 
     def random_destination(self, near=None):
         while True:
+            if time.time() > self.deadline:
+                raise TimeOut
             if near is None:
                 if random.random() < LANDMARK_GENE_CHANCE:
                     i = random.choice(self.landmarks)
@@ -152,7 +154,7 @@ class GeneticSolver(object):
                 #world = world.apply_commands(commands)
 
                 for c in commands:
-                    direction = [-world.width, world.width, -1, 1]['UDLR'.index(c)]
+                    direction = [-world.width, world.width, -1, 1, 0]['UDLRA'.index(c)]
                     if world.data[world.robot + direction] == 'W' and world.razors > 0:
                         world = world.apply_command('S')
                         if world.terminated: break
@@ -180,7 +182,7 @@ class GeneticSolver(object):
                 destination = gene_value
                 commands = pathfinder.commands_to_reach(world, destination)
                 for c in commands:
-                    direction = [-world.width, world.width, -1, 1]['UDLR'.index(c)]
+                    direction = [-world.width, world.width, -1, 1, 0]['UDLRA'.index(c)]
                     if world.data[world.robot + direction] == 'W' and world.razors > 0:
                         world = world.apply_command('S')
                         compiled.append('S')
@@ -246,8 +248,11 @@ class GeneticSolver(object):
             while True:
                 population = [self.generate_candidate(INITIAL_LENGTH) \
                               for _ in xrange(POPULATION_SIZE)]
-                last_improvement_time = start_time
+                last_improvement_time = time.time()
+                last_improvement_iteration = 0
+                
                 previous_iteration_score = None
+                
                 for i in itertools.count():
                     (population, leader) = self.step(population)
                     leader_score = self.fitness(leader)
@@ -259,6 +264,8 @@ class GeneticSolver(object):
                         print "Iteration %d: %d" % (i, leader_score)
                     if convergence_time > 0 and \
                         (time.time() - last_improvement_time > convergence_time):
+                        break
+                    if i - last_improvement_iteration > 100:
                         break
                     if (self.best_score is None) or (leader_score > self.best_score):
                         if verbose:
