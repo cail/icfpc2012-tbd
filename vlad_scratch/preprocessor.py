@@ -30,6 +30,8 @@ def reachability_step(width, data):
                 
     neighbors = [+1, -1, -width-1, -width, -width+1, +width]
     
+    portals = '123456789ABCDEFGHI'
+    
     while tasks:
         i = tasks.pop()
         assert not reachable[i]
@@ -39,10 +41,18 @@ def reachability_step(width, data):
         cell = data[i]
         if cell == 'R':
             r = True
-        elif cell in ' .!\\' or auto_empty[i]:
+        elif auto_empty[i] or cell in ' .!\\':
             if reachable[i-1] or reachable[i+1] or\
                reachable[i+width] or reachable[i-width]:
                 r = True
+        elif cell in portals:
+            # TODO: less conservative portals reachability
+            r = True
+            reachable[i] = True
+            for j in range(len(data)):
+                if data[j] in portals:
+                    if not reachable[j]:
+                        tasks.add(j)
         elif cell == '*':
             if reachable[i+width]:
                 # dig under
