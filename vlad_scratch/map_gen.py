@@ -11,7 +11,7 @@ def create_map(width, height):
     
     for x in range(width):
         for y in range(height):
-            data[x, y] = random.choice(r'              ................#*\@W!ABCDEFGHI')
+            data[x, y] = random.choice(' .'*50+r'#*\\@W!ABCDEFGHI')
      
     unique = 'RL123456789'
     for c in unique:
@@ -50,7 +50,7 @@ Trampoline E targets 5
 Trampoline F targets 6
 Trampoline G targets 7
 Trampoline H targets 8
-Trampoline I targets 9""".format(random.randrange(1, 20), 
+Trampoline I targets 9""".format(random.randrange(5, 200), 
                                  random.randrange(3),
                                  random.randrange(5),
                                  random.randrange(10),
