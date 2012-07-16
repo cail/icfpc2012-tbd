@@ -109,8 +109,8 @@ def interesting_actions(world):
     interesting = '_<>\\ABCDEFGHI'
     for idx, path in enumerate_paths_to_goals(world, world.robot, walkable, interesting):
         priority = 0
-        if data[idx] == '_' and data[idx-width] == '@':
-            priority = 8
+        if data[idx] in 'ABCDEFGHI':
+            priority = 1
         if data[idx] == '>':
             if data[idx+1] == '@':
                 priority = 4
@@ -119,6 +119,8 @@ def interesting_actions(world):
             if data[idx-1] == '@':
                 priority = 4
             path += 'L'
+        if data[idx] == '_' and data[idx-width] == '@':
+            priority = 8
         if not actions or actions[0][2] != path:
             actions.append((priority, idx, path))
 

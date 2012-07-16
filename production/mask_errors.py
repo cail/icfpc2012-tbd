@@ -22,6 +22,7 @@ def failsafe(default=None):
             except:
                 logging.warning('Error masked in {}'.format(f))
                 if not MASK_ERRORS:
+                    logging.warning(traceback.format_exc())
                     raise
                 return default
         return decorated_f

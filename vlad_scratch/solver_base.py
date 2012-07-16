@@ -1,6 +1,8 @@
 from time import clock
 import logging
 
+from mask_errors import failsafe
+
 
 class StopSearch(Exception):
     pass
@@ -25,6 +27,7 @@ class SolverBase(object):
     def search(self):
         raise NotImplementedError()    
     
+    @failsafe(default=None)
     def solve(self):
         try:
             self.search()
