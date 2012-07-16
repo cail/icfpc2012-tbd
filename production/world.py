@@ -9,7 +9,7 @@ application_counter = 0
 TRAMPOLINE_SOURCE_LETTERS = set('ABCDEFGHI')
 TRAMPOLINE_TARGET_LETTERS = set('123456789')
 TRAMPOLINE_LETTERS = TRAMPOLINE_SOURCE_LETTERS | TRAMPOLINE_TARGET_LETTERS
-VALID_MAP_CHARACTERS = set('R#.*\\LO @\n') | TRAMPOLINE_LETTERS  
+VALID_MAP_CHARACTERS = set('R#.*\\LO !W@\n') | TRAMPOLINE_LETTERS  
  
 def find_single_item(data, value):
     idx = data.index(value)
@@ -47,6 +47,7 @@ class World(WorldBase):
     >>> world.score
     212
     '''
+    
     __slots__ = [
         'width',    # including the extra borders 
         'total_lambdas',
@@ -55,6 +56,9 @@ class World(WorldBase):
         'flooding',
         'waterproof',
         'trampolines',
+        'growth',
+        'neighbours8',
+        
         # stuff above could be shared between instances.
         'data',     # 1d array
         'robot',    # index in the 1d array
@@ -62,6 +66,8 @@ class World(WorldBase):
         'time',
         'final_score', # non-None when the world is terminated
         'time_underwater',
+        'razors',
+        'beards',
     ]
     
 
@@ -76,6 +82,9 @@ class World(WorldBase):
             self.flooding = other.flooding
             self.waterproof = other.waterproof
             self.trampolines = other.trampolines
+            self.growth = other.growth
+            self.neighbours8 = other.neighbours8
+            
         
             self.data = copy(other.data)
             self.robot = other.robot
@@ -83,6 +92,7 @@ class World(WorldBase):
             self.time = other.time
             self.final_score = other.final_score
             self.time_underwater = other.time_underwater
+            self.razors = other.razors
 
     @classmethod
     def from_string(World, src):
@@ -114,7 +124,11 @@ class World(WorldBase):
         world.width = width
         world.lift = find_single_item(data, 'L')
         world.total_lambdas = data.count('\\') + data.count('@')
-        
+        world.neighbours8 = [d1 + d2 
+                             for d1 in (-1, 0, 1) 
+                             for d2 in (-width, 0, width)
+                             if d1 + d2]
+                
         world.data = data
         world.robot = find_single_item(data, 'R')
         world.collected_lambdas = 0
@@ -131,14 +145,16 @@ class World(WorldBase):
                 trampoline_mapping[src] = trg
             else:
                 metadict[key] = value
-        
+                
+        world.trampolines = enhance_trampoline_mapping(trampoline_mapping, world.data)
                 
         world.water = int(metadict.get('Water', 0))
         world.flooding = int(metadict.get('Flooding', 0))
         world.waterproof = int(metadict.get('Waterproof', 10))
+        world.growth = int(metadict.get('Growth', 25))
         world.time_underwater = 0
-        world.trampolines = enhance_trampoline_mapping(trampoline_mapping, world.data)
-        
+        world.razors = int(metadict.get("Razors", 0))
+
         return world
     
     def get_map_string(self):
@@ -188,8 +204,16 @@ class World(WorldBase):
         new_data = new_world.data
         robot = self.robot
         width = self.width
+        beards_cut = False
         
         if command == 'W':
+            new_robot = robot
+        elif command == 'S':
+            if self.razors > 0:
+                for d in self.neighbours8:
+                    if new_data[robot + d] == 'W':
+                        new_data[robot + d] = ' '
+                        beards_cut = True
             new_robot = robot
         else:
             direction = [-self.width, self.width, -1, 1]['UDLR'.index(command)]
@@ -223,10 +247,14 @@ class World(WorldBase):
                 new_data[new_robot] = 'R'
                 for src in sources:
                     new_data[src] = ' '
+            elif new_cell == '!':
+                new_data[new_robot] = 'R'
+                new_data[robot] = ' '
+                new_world.razors += 1
             else:
 #                warnings.warn('Action failed!')
                 new_robot = robot
-        if new_robot != robot:
+        if new_robot != robot or beards_cut:
             # another copy :( at least it's temporary
             data = new_data
             new_world.data = new_data = copy(new_data)
@@ -250,7 +278,8 @@ class World(WorldBase):
                 new_world.final_score = new_world.get_score_lose() 
         
         # pypy optimizer is funny
-        ord_rock, ord_horock = ord('*'), ord('@') 
+        ord_rock, ord_horock, ord_beard = ord('*'), ord('@'), ord('W')
+        beards_growing = new_world.time % self.growth == 0 
         
         for i in reversed(xrange(1, len(data) / width - 1)):
             offset = i * width
@@ -270,7 +299,11 @@ class World(WorldBase):
                     elif cell_below == '\\':
                         if data[offset + 1] == ' ' and data[offset_below + 1] == ' ':
                             rock_falls(data, new_world, new_data, new_robot, cell, offset, offset_below + 1)
-                                
+                elif ord(cell) == ord_beard and beards_growing:
+                    for d in self.neighbours8:
+                        if data[offset + d] == ' ':
+                            new_data[offset + d] = 'W'
+        
 
         return new_world
      

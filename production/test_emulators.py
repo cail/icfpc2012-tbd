@@ -44,6 +44,16 @@ tests = [
     ('horock1', 'RRDDU'),
     ('horock1', 'LDDDDDLDURRDLURRRDDLRA'),
     ('horock1', 'RRRDDDDLDDDDDRRRULLUUUULLLWDRULLLDRRRRDDRDUUUUULLURRRRUURRUULDDRUUUUDRURRDLLDDDUUUULLLUUUUURRRRU'),
+
+    ('beard3', 'RRRRUULLL'),
+    ('beard3', 'RRRRUULLLR'),
+    ('beard3', 'RRRRUULLLRW'),
+    ('beard3', 'RRRRUULLL' + 'W' * 10),
+    ('beard3', 'RRRRUULLLR' + 'W' * 10),
+    ('beard3', 'RRRRUULLLRW' + 'W' * 10),
+    ('beard3', 'RRRRUULLLRWS'),
+    ('beard3', 'UUUURRRRRRRRDLLRRRUDRDDLUWWWWWWWWWWWWWWWWWWWWWS'),
+    
     
     # Pls add your own tests everyone, especially for interesting cases
     ]
@@ -136,7 +146,12 @@ def validate_internal(map_data, commands, web_map_name, world_classes):
         
         for i, c in enumerate(commands):
             prev_world = worlds[0]
-            worlds = [world.apply_command(c) for world in worlds]
+            worlds1 = [world.apply_command(c) for world in worlds]
+            worlds2 = [world.apply_command(c) for world in worlds]
+            for w1, w2 in zip(worlds1, worlds2):
+                if w1.get_map_string() != w2.get_map_string() or w1.score != w2.score:
+                    print 'World {} is not immutable ffs!'.format(w1.__class__.__name__)
+            worlds = worlds2
             if not check_worlds(worlds, commands[:i+1], prev_world): return False
             terminated, not_terminated = [], []
             for w in worlds:
@@ -181,7 +196,7 @@ def run_all_tests(world_classes):
 
 def run_interactively(world, initial_commands=''):
     def cleanup(commands):
-        return [c for c in commands.upper() if c in 'UDLRWA']
+        return [c for c in commands.upper() if c in 'UDLRWAS']
     def print_world(world):
         if hasattr(world, 'robot'):
             robot = world.robot 
