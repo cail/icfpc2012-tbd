@@ -67,7 +67,8 @@ def plot_path(world, destination):
     return None # not reachable
 
 def neighbors(world, i):
-    return (j for j in [i+1, i-1, i+world.width, i-world.width] if 0 <= j < len(world.data)) 
+    result = [j for j in [i+1, i-1, i+world.width, i-world.width] if 0 <= j < len(world.data)]
+    return [j for j in result if world.data[j] not in ['#', '@', '*']]
 
 def distance(world, i, j):
     x1, y1 = world.index_to_coords(i)

@@ -84,6 +84,8 @@ class GeneticSolver(object):
 
     def random_destination(self, near=None):
         while True:
+            if time.time() > self.deadline:
+                raise TimeOut
             if near is None:
                 if random.random() < LANDMARK_GENE_CHANCE:
                     i = random.choice(self.landmarks)
@@ -152,7 +154,7 @@ class GeneticSolver(object):
                 #world = world.apply_commands(commands)
 
                 for c in commands:
-                    direction = [-world.width, world.width, -1, 1]['UDLR'.index(c)]
+                    direction = [-world.width, world.width, -1, 1, 0]['UDLRA'.index(c)]
                     if world.data[world.robot + direction] == 'W' and world.razors > 0:
                         world = world.apply_command('S')
                         if world.terminated: break
@@ -180,7 +182,7 @@ class GeneticSolver(object):
                 destination = gene_value
                 commands = pathfinder.commands_to_reach(world, destination)
                 for c in commands:
-                    direction = [-world.width, world.width, -1, 1]['UDLR'.index(c)]
+                    direction = [-world.width, world.width, -1, 1, 0]['UDLRA'.index(c)]
                     if world.data[world.robot + direction] == 'W' and world.razors > 0:
                         world = world.apply_command('S')
                         compiled.append('S')
