@@ -19,6 +19,8 @@ def failsafe(default=None):
         def decorated_f(*args, **kwargs):
             try:
                 return f(*args, **kwargs)
+            except SystemExit:
+                raise
             except:
                 logging.warning('Error masked in {}'.format(f))
                 if not MASK_ERRORS:
