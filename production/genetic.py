@@ -259,6 +259,7 @@ class GeneticSolver(object):
                     if (previous_iteration_score is None) or \
                         (leader_score > previous_iteration_score):
                         last_improvement_time = time.time()
+                        last_improvement_iteration = i
                     previous_iteration_score = leader_score 
                     if verbose:
                         print "Iteration %d: %d" % (i, leader_score)
