@@ -51,12 +51,13 @@ def test_processing_step(tests, step, verbose=False):
         assert len(expected) == len(data), (len(expected), len(data))
         
         expected_bool = [{'0':False, '1':True}[e] for e in expected]
+        actual_string = [{False:'0', True:'1'}[e] for e in reachable]
         
         if expected_bool != reachable:
             if not verbose:
                 print '-'*10
                 print test
-                print data_to_string(width, reachable)
+                print data_to_string(width, actual_string)
             print 'fail, expected'
             print data_to_string(width, expected)
             fails += 1
@@ -105,7 +106,9 @@ def fuzzy_tests():
     
     print 'preprocessor fuzzy tests:'
     
-    maps = glob('../data/sample_maps/contest*.map')
+    maps = []
+    maps += glob('../data/sample_maps/trampoline*.map')
+    maps += glob('../data/sample_maps/contest*.map')
     maps += glob('../data/sample_maps/flood*.map')
     maps += glob('../data/maps_manual/*.map')
     
@@ -128,10 +131,12 @@ def fuzzy_tests():
             
 if __name__ == '__main__':
     
-    #print 'reachability step tests'
-    #test_processing_step(reachability_tests, reachability_step)
+    print 'reachability step tests'
+    test_processing_step(reachability_tests, reachability_step)
     
     print 'stone reachability step tests'
     test_processing_step(stone_reachability_tests, stone_reachability_step)
+    
+    #exit()
     
     fuzzy_tests()
