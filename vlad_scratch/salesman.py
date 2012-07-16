@@ -62,10 +62,14 @@ def salesman_lower_bound(world, need_exit=True):
     if world.collected_lambdas == world.total_lambdas:
         # go straight to exit
         #return dist(world.robot_coords, world.lift_coords)
-        _, path = next(enumerate_paths_to_goals(world,
+        result = next(enumerate_paths_to_goals(world,
                                                 start=world.robot,
                                                 walkable=walkable,
-                                                goals='OL'))
+                                                goals='OL'),
+                       None)
+        if result is None:
+            return 0
+        _, path = result
         return len(path)
     
     dists1 = {}
@@ -84,15 +88,20 @@ def salesman_lower_bound(world, need_exit=True):
                                                   goals='\\'):
             dists2[idx] = len(path)
             
-        assert set(dists1.keys()) == set(dists2.keys())
+        #assert set(dists1.keys()) == set(dists2.keys())
         #if set(dists1.keys()) != set(dists2.keys()):
         #    print set(dists1.keys())
         #    print set(dists2.keys())
         #    world.show()
         #    print world.total_lambdas
         #    raw_input()
-            
-        max_dist = max(dists1[i]+dists2[i] for i in dists1)
+        
+        keys1 = set(dists1.keys())
+        keys2 = set(dists2.keys())
+        if len(keys1) == 0 or keys1 != keys2:
+            max_dist = 0 # something went wrong (perhaps portals?)
+        else:    
+            max_dist = max(dists1[i]+dists2[i] for i in dists1)
 
     else:
         if dists1 == {}:
