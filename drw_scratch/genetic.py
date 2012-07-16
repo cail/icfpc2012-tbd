@@ -78,7 +78,7 @@ class GeneticSolver(object):
         self.cache = {}
         self.mutations_generator = WeightedRandomGenerator(*zip(*MUTATIONS))
         
-        #self.commands_applied = 0
+        self.best, self.best_score = None, None
 
     def random_destination(self, near=None):
         while True:
@@ -239,13 +239,16 @@ class GeneticSolver(object):
         return (next_generation, leader)
     
     def solve(self, running_time=150, convergence_time=10, verbose=False):
-        ''' Make multiple attemts at solving the map, returning the best solution.
+        ''' Make multiple attempts at solving the map, returning the best solution.
         
             The function will run for running_time seconds. Population is discarded
             if no improvement has been observed for convergence_time seconds. '''
         start_time = time.time()
         timed_out = False
-        best_leader, best_leader_score = None, None
+        
+        self.best, self.best_score = None, None
+        
+        self.deadline = start_time + running_time        
         while not timed_out:
             population = [self.generate_candidate(INITIAL_LENGTH) \
                           for _ in xrange(POPULATION_SIZE)]
@@ -262,25 +265,31 @@ class GeneticSolver(object):
                 previous_iteration_score = leader_score 
                 if verbose:
                     print "Iteration %d: %d" % (i, leader_score)
-                if running_time > 0 and (time.time() - start_time > running_time):
+                if time.time() > self.deadline:
                     timed_out = True
                     break
                 if convergence_time > 0 and \
                     (time.time() - last_improvement_time > convergence_time):
                     break
-            if (best_leader is None) or (leader_score > best_leader_score):
+            if (self.best_score is None) or (leader_score > self.best_score):
                 if verbose:
                     print "New global best: %d" % leader_score
-                best_leader = leader
-                best_leader_score = leader_score
-        return self.compile(best_leader)
+                self.best = leader
+                self.best_score = leader_score
+        return self.compile(self.best)
+
+    def get_best(self):
+        if self.best_score == None:
+            return (0, 'A')
+        else:
+            return (self.best_score, self.compile(self.best_leader))
 
 INITIAL_LENGTH = 3
 POPULATION_SIZE = 300
 SELECTED_FOR_BREEDING = 0.1
 CROSSOVER_RATE = 0.7
 MUTATION_RATE = 0.7
-MUTATION_ATTEMPTS = 15 # stir things up a bit
+MUTATION_ATTEMPTS = 10 # stir things up a bit
 LANDMARK_GENE_CHANCE = 0.3 # generates genes that makes us go to interesting places
 NUM_ELITE = 3 # top N candidates are copied to the new generation unchanged 
 MUTATIONS = [('insert_long_move', 10), ('insert_short_move', 10),\
