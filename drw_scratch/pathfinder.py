@@ -67,13 +67,7 @@ def plot_path(world, destination):
     return None # not reachable
 
 def neighbors(world, i):
-    coords_to_index = lambda (x,y): len(world.data)-(y+2)*world.width+x+1
-
-    x, y = world.index_to_coords(i)
-    
-    result = [coords_to_index(coords) for coords in [(x+1, y), (x-1,y), (x,y+1), (x,y-1)]]
-    result = [j for j in result if world.data[j] not in ['#', '*']]
-    return result 
+    return (j for j in [i+1, i-1, i+world.width, i-world.width] if 0 <= j < len(world.data)) 
 
 def distance(world, i, j):
     x1, y1 = world.index_to_coords(i)
@@ -106,4 +100,3 @@ def path_to_commands(path):
         point = next_point
     return commands
 
-argmin = lambda funct, items: min(itertools.izip(itertools.imap(funct, items), items))
