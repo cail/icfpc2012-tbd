@@ -13,15 +13,15 @@
 #   @ @  ##    #    #  @ #*#  #
 #  .. .. ##    2    #\ # #*#  #
 #   @ @  #*#       #*# # #*#  #
-#D .. .. #*#4  L  5#*#   #*\#E#
+#D .. .. #*#   L   #*#   #*\#E#
 #   @ @ # @ #  R  # @ #  #*#  #
 #  .. ..  #         #    #*#  #
-#        #*# 6   8 #*#   #*#  #
-#        #*.   7   .*##   \   #
+#        #*#       #*#   #*#  #
+#        #*.       .*##   \   #
 ######### @ # **### @ #########
 #\     #I ### ..@ ### \\ \\\  #
 # # ## ####@#####   #  \*\ \* #
-# #  #\  9#*   G ## #  \\\ \\\#
+# #  #\   #*   G ## #  \\\ \\\#
 # # .# ## #***    # #       *\#
 # # .\ ## #****  *# #  \\\ \\\#
 #   ..  . #*******# #  \ \*\  #
@@ -31,14 +31,14 @@
 ##############################W
 
 Trampoline A targets 1
-Trampoline B targets 2
-Trampoline C targets 3
-Trampoline D targets 4
-Trampoline E targets 5
-Trampoline F targets 6
-Trampoline G targets 7
-Trampoline H targets 8
-Trampoline I targets 9
+Trampoline B targets 1
+Trampoline C targets 1
+Trampoline D targets 1
+Trampoline E targets 2
+Trampoline F targets 2
+Trampoline G targets 3
+Trampoline H targets 3
+Trampoline I targets 3
 Growth 2
 Razors 4
 Water 0

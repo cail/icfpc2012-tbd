@@ -1,7 +1,9 @@
 import logging
+from collections import defaultdict
 from world import World
 from heapq import heappush, heappop
 from vorber_world import VorberWorld
+import pprint
 
 class LambdaFields:
     # fields: [(int LambdaCoordinate, [int] LambdaField)]
@@ -21,10 +23,10 @@ class LambdaFields:
         self.world = world
         fields = []
         for field_source in world.enumerate_lambdas_index():
-            fields.append((field_source, self.calculate_field(field_source, world)))
+            fields.append((field_source, self.calculate_field(field_source)))
         self.fields = fields
    
-    def calculate_field(self, source, world):
+    def calculate_field(self, source):
         # list of length of world's data filled with large enough number
         field = [10 * len(world.data)] * len(world.data)
         # the lambda ray source
@@ -35,6 +37,8 @@ class LambdaFields:
         #logic for wave distribution
         while front:
             t, x = heappop(front)
+            pprint.pprint(('x->ix:', (x, '->', world.data[x])))
+            pprint.pprint(self.incident_cells(x, world))
             for ix in self.incident_cells(x, world):
                 # boundaries
                 if not (0 <= ix < len(world.data)):
@@ -43,24 +47,36 @@ class LambdaFields:
                 if field[ix] <= t:
                     continue
                 # another brick in the wall
-                if world.data[ix] == '#':
+                if self.world.data[ix] in '#':
                     continue
                 passing_time = self.wave_passing_time(world.data[ix], t)
-                field_potential = (passing_time, ix)
-                # been there. did better.
-                if passing_time < field[ix]:
-                    field[ix] = passing_time
-                    heappush(front, field_potential)
+                pprint.pprint(passing_time)
+                if passing_time != 0:
+                    field_potential = (passing_time, ix)
+                    # been there. did better.
+                    if passing_time < field[ix]:
+                        field[ix] = passing_time
+                        heappush(front, field_potential)
+                else:
+                    heappush(front, (t+1, ix)) #teleporting
         return field
     
     # cells that are to be considered incident to the given cell 
     def incident_cells(self, x, world):
-        return [ix for ix in [x+1, x-1, x+world.width, x-world.width]]
+        for _, (to, ix) in self.world.trampolines.iteritems():
+            if x == to:
+                return ix
+        else:
+            return [ix for ix in [x+1, x-1, x+world.width, x-world.width]]
     
     # speed of lambda waves in the medium
     def wave_passing_time(self, cell, time):
         if cell == '*':
+            time+=3
+        elif cell == '.':
             time+=2
+        elif cell in '123456789':
+            time=0
         else:
             time+=1
         return time
@@ -79,12 +95,12 @@ class LambdaFields:
         return result
     
 if __name__ == '__main__':
-    import pprint
     logging.basicConfig(level=logging.DEBUG)
     #world = World.from_file('../data/maps_manual/the_best.map')
-    #world = World.from_file('../data/maps_manual/lambda_wave1.map')
-    world = World.from_file('../data/maps_manual/tricky.map')
-    vorber_world = VorberWorld.from_file('../data/maps_manual/tricky.map')
+    world = World.from_file('../data/maps_manual/lambda_wave1.map')
+    #world = World.from_file('../data/maps_manual/tricky.map')
+    #vorber_world = VorberWorld.from_file('../data/maps_manual/lambda_wave1.map')
+    #vorber_world = VorberWorld.from_file('../data/maps_manual/tricky.map')
     lambda_fields = LambdaFields(world)
     index = 0
     for i in range(0, len(world.data) / world.width):
@@ -97,10 +113,8 @@ if __name__ == '__main__':
             print field_potential,
             index+=1               
     print
-    trp = vorber_world.trampolines
-    pprint.pprint(trp['A'])
-    pprint.pprint(lambda_fields.superposition(34))
-    print(lambda_fields.world.width)
-    #pprint.pprint(lambda_fields.full_superposition(lambda_fields))
+    #for k, v in trp.itervalues():
+    #    print k, v
+    #pprint.pprint(lambda_fields.superposition(lambda_fields))
     #pprint.pprint(lambda_fields.fields)
     world.show()
