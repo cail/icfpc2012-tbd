@@ -216,6 +216,7 @@ class World(WorldBase):
                         beards_cut = True
             new_robot = robot
         else:
+            assert command in 'UDLR', command
             direction = [-self.width, self.width, -1, 1]['UDLR'.index(command)]
             new_robot = robot + direction
             new_cell = data[new_robot] 
