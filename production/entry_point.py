@@ -52,7 +52,7 @@ def greedy(world):
 def call_genetic(world):
     global solver
     print 'genetic'
-    solution = genetic.solve(World(world), 5)
+    solution = genetic.solve(World(world), 50)
     score = World(world).apply_commands(solution).score
     print 'genetic done', score
     if score > 0:

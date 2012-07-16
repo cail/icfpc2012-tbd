@@ -3,6 +3,7 @@ from itertools import imap
 
 from world_base import WorldBase
 import pprint
+from unittest.loader import VALID_MODULE_NAME
 
 #application_counter = 0
 
@@ -100,6 +101,8 @@ class World(WorldBase):
         try:
             assert all(c in VALID_MAP_CHARACTERS for c in src)
         except AssertionError:
+            print 'Invalid characters: {!r}'.format(''.join(sorted(set(
+                    c for c in src if c not in VALID_MAP_CHARACTERS)))) 
             print src
             raise
         lines = src.split('\n')

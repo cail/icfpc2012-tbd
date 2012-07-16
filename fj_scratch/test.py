@@ -48,8 +48,8 @@ t_start = time.time()
 
 
 #world_classes.remove(VorberWorld)
-#validate_custom('../data/maps_manual/push2.map', 'LLWDDLWDWDWDDLLUURLRRUUUUUULLLLLLLLRRRRRRRRRRR'
-#                , world_classes)
+validate_custom('../data/maps_manual/lookahead.map', 'LL'
+                , [World, VorberWorld])
 
 #map_name = 'flood1'
 #path = run_interactively(VorberWorld.from_file(official_map_file_name(map_name)))
@@ -57,6 +57,6 @@ t_start = time.time()
 #path = run_interactively(World.from_file(official_map_file_name('beard3')))
 #validate('beard3', path, [World, VorberWorld])
 
-import webvalidator
-webvalidator.dump_all_cached_responses()
+#import webvalidator
+#webvalidator.dump_all_cached_responses()
 
