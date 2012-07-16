@@ -42,7 +42,7 @@ def reachability_step(width, data):
         cell = data[i]
         if cell == 'R':
             r = True
-        elif auto_empty[i] or cell in ' .!\\':
+        elif auto_empty[i] or cell in ' .!\\W':
             if reachable[i-1] or reachable[i+1] or\
                reachable[i+width] or reachable[i-width]:
                 r = True

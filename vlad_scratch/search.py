@@ -173,7 +173,6 @@ class Solver(SolverBase):
         self.state = current_state
         
     
-    @failsafe(default=None)
     def search(self):
         stack_depth = min(200, 10**8//len(self.state.data))
         logging.info('Max stack depth: {}'.format(stack_depth))
@@ -239,9 +238,9 @@ def main():
     from test_emulators import validate_custom, validate
 
     
-    map_name = 'horock3'
-    map_path = '../data/sample_maps/{}.map'.format(map_name)
-    #map_path = '../data/maps_manual/horo2.map'
+    #map_name = 'beard1'
+    #map_path = '../data/sample_maps/{}.map'.format(map_name)
+    map_path = '../data/maps_manual/simple_beard.map'
     world = World.from_file(map_path)
     
     world.show()
@@ -271,8 +270,8 @@ def main():
     assert score == validated_score, (score, validated_score)
     '''
     
-    validate(map_name, solution, [World])
-    #validate_custom(map_path, solution, [World])#, DictWorld, DualWorld])
+    #validate(map_name, solution, [World])
+    validate_custom(map_path, solution, [World])#, DictWorld, DualWorld])
     
     print 'ok'
     
