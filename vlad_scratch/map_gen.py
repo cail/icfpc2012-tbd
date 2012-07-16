@@ -11,7 +11,7 @@ def create_map(width, height):
     
     for x in range(width):
         for y in range(height):
-            data[x, y] = random.choice(r'         .......#*\@W!ABCDEFGHI')
+            data[x, y] = random.choice(r'              ................#*\@W!ABCDEFGHI')
      
     unique = 'RL123456789'
     for c in unique:
@@ -60,7 +60,7 @@ Trampoline I targets 9""".format(random.randrange(1, 20),
     
 if __name__ == '__main__':
     random.seed(666)
-    for i in range(10):
+    for i in range(20):
         with open('../data/stress/shit{}.map'.format(i), 'w') as fout:
             m = create_map(30+10*i, 30+10*i)
             #print m
