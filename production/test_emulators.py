@@ -5,6 +5,7 @@ import re
 import dual_world
 import time
 from os import path as os_path
+from preprocessor import preprocess_world
 
 tests = [
     ('contest1', 'LDRDDULULLDD'), # almost complete solution
@@ -59,11 +60,20 @@ tests = [
     ]
 
 from world import World
-#from world_fast import WorldFast
 from dict_world import DictWorld
 from dual_world import DualWorld
 from vorber_world import VorberWorld
-world_classes = [World, VorberWorld] #  WorldFast, DictWorld, DualWorld 
+
+class PreprocessedWorld(World):
+    @classmethod
+    def from_string(my_class, src):
+        # lol classmethods are broken
+        world = World.from_string.im_func(my_class, src)
+        world = preprocess_world(world)
+        return world
+        
+
+world_classes = [World, VorberWorld] #  DictWorld, DualWorld # PreprocessedWorld 
 
 class WebValidatorProxy(object):
     def __init__(self, map_name, commands):
@@ -103,10 +113,16 @@ def validate_internal(map_data, commands, web_map_name, world_classes):
     
     Return True if no deviations were found.
     '''
+    preprocessed = False
     def format_world_state(world):
         # fucking trampoline hack
         map_string = world.get_map_string()
-        map_string = map_string.translate(string.maketrans('ABCDEFGHI123456789', 'TTTTTTTTTttttttttt')) 
+        trans_from = 'ABCDEFGHI123456789'
+        trans_to   = 'TTTTTTTTTttttttttt'
+        if preprocessed:
+            trans_from += '.^'
+            trans_to   += ' *'
+        map_string = map_string.translate(string.maketrans(trans_from, trans_to))
         return '{}\nScore:{!r}'.format(map_string, world.score)
     
     def check_worlds(worlds, commands, prev_world, always_webvalidate = False):
@@ -133,6 +149,8 @@ def validate_internal(map_data, commands, web_map_name, world_classes):
         return True
     
     assert len(world_classes)
+    
+    preprocessed = any(cls.__name__.startswith('Preprocessed') for cls in world_classes)
 
     try:
         # dirty hack yo
@@ -140,6 +158,7 @@ def validate_internal(map_data, commands, web_map_name, world_classes):
         dual_world.suppress_errors = True
         
         worlds = [cls.from_string(map_data) for cls in world_classes]
+        
         
         # check initial states
         if not check_worlds(worlds, '', None): return False

@@ -95,7 +95,7 @@ class World(WorldBase):
             self.razors = other.razors
 
     @classmethod
-    def from_string(World, src):
+    def from_string(my_class, src):
         src, _, metadata = src.partition('\n\n')
         try:
             assert all(c in VALID_MAP_CHARACTERS for c in src)
@@ -120,7 +120,7 @@ class World(WorldBase):
             data.append('#')
         data.extend('#' for _ in xrange(width))
         
-        world = World()
+        world = my_class()
         world.width = width
         world.lift = find_single_item(data, 'L')
         world.total_lambdas = data.count('\\') + data.count('@')
@@ -191,7 +191,7 @@ class World(WorldBase):
         application_counter += 1
         assert not self.terminated
         
-        new_world = World(self)
+        new_world = self.__class__(self)
         
         # abort is not a command really
         if command == 'A':

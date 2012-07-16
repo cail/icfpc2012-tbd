@@ -166,7 +166,7 @@ def preprocess_world(world):
     we can think of is pretty contrived, so...)
     '''    
     
-    world = World(world)
+    world = world.__class__(world)
     
     width = world.width
     data = world.data
