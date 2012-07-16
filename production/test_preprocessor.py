@@ -112,15 +112,17 @@ def fuzzy_tests():
     maps += glob('../data/sample_maps/flood*.map')
     maps += glob('../data/maps_manual/*.map')
     
+    exclude = ['abort_immediately', 'tricky']
+    
     for map_path in maps:
         print map_path,
-        if 'abort_immediately' in map_path:
+        if any(e in map_path for e in exclude):
             print 'ignored'
             continue
         world = World.from_file(map_path)
         
-        for i in range(500):
-            commands = ''.join(choice('LRUDW') for _ in range(randrange(2000)))
+        for i in range(50):
+            commands = ''.join(choice('LRUDW') for _ in range(randrange(1000)))
             check_preprocessor(world, commands, verbose=False)
             if i % 10 == 0:
                 print '.',
