@@ -6,6 +6,7 @@ from world import World
 from search import Solver 
 import mask_errors
 import genetic
+import utils
 
 mask_errors.MASK_ERRORS = True
 
@@ -18,8 +19,37 @@ def handler(signum, stack):
     exit()
 
 
+
 @mask_errors.failsafe(default=None)
-def call_genetic():
+def greedy(world):
+    initial_world = World(world)
+    global solver
+    cmds = ''
+    while not world.terminated:
+        if len(cmds) > 10000:
+            break
+        #print cmds
+        t = utils.path_to_nearest_lambda_or_lift(world)
+        if t is None:
+            break
+        _, c = t
+        #print c
+        world = world.apply_commands(c)
+        cmds += c
+        if world.score > solver.best_score:
+            solver.best_score = world.score
+            solver.best_solution = cmds
+            
+    print 'greedy', solver.best_score, len(solver.best_solution)
+    
+    if initial_world.apply_commands(cmds).score < 0:
+        solver.best_score = 0
+        solver.best_solution = ''
+        print 'shit!'
+
+
+@mask_errors.failsafe(default=None)
+def call_genetic(world):
     global solver
     print 'genetic'
     solution = genetic.solve(World(world), 5)
@@ -44,7 +74,9 @@ if __name__ == '__main__':
     
     solver = Solver(world, timeout=1000000)
     
-    call_genetic()
+    greedy(World(world))
+    
+    call_genetic(World(world))
     
     solver.solve()
     
