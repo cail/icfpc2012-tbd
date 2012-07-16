@@ -4,7 +4,7 @@ from itertools import imap
 from world_base import WorldBase
 import pprint
 
-application_counter = 0
+#application_counter = 0
 
 TRAMPOLINE_SOURCE_LETTERS = set('ABCDEFGHI')
 TRAMPOLINE_TARGET_LETTERS = set('123456789')
@@ -187,8 +187,8 @@ class World(WorldBase):
         return self.water + (self.time - 1) // self.flooding 
 
     def apply_command(self, command):
-        global application_counter
-        application_counter += 1
+#        global application_counter
+#        application_counter += 1
         assert not self.terminated
         
         new_world = self.__class__(self)
