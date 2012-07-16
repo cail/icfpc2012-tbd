@@ -274,15 +274,17 @@ class GeneticSolver(object):
             if (self.best_score is None) or (leader_score > self.best_score):
                 if verbose:
                     print "New global best: %d" % leader_score
-                self.best = leader
+                self.best = self.compile(leader)
                 self.best_score = leader_score
-        return self.compile(self.best)
+        #return self.compile(self.best)
+        return self.best
 
     def get_best(self):
         if self.best_score == None:
             return (0, 'A')
         else:
-            return (self.best_score, self.compile(self.best_leader))
+            #return (self.best_score, self.compile(self.best))
+            return (self.best_score, self.best)
 
 INITIAL_LENGTH = 3
 POPULATION_SIZE = 300
@@ -295,6 +297,11 @@ NUM_ELITE = 3 # top N candidates are copied to the new generation unchanged
 MUTATIONS = [('insert_long_move', 10), ('insert_short_move', 10),\
               ('insert_wait', 5), ('remove', 20),] # weighted mutations
 SHORT_MOVE_DISTANCE = 3
+
+def solve(world, running_time):
+    solver = GeneticSolver(world)
+    return solver.solve(running_time=running_time)
+    
 
 if __name__ == '__main__':
     running_time = 20
