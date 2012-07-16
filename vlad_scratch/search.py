@@ -6,7 +6,7 @@ import logging
 
 from time import clock, sleep
 from collections import defaultdict, Counter
-from itertools import product
+from itertools import product, islice
 
 from solver_base import SolverBase
 from preprocessor import preprocess_world
@@ -49,7 +49,6 @@ class Solver(SolverBase):
         given world is raw (not even preprocessed);
         calls are cached
         '''
-        
         assert not world.terminated
         
         raw_hash = world.get_hash()
@@ -58,6 +57,8 @@ class Solver(SolverBase):
             self.stats['ub ce hit'] += 1
             ub, cache_entry = result
             return ub-world.time, cache_entry
+
+        self.check_stop()
 
         preprocessed = preprocess_world(world)
         self.stats['preprocess'] += 1
@@ -85,13 +86,13 @@ class Solver(SolverBase):
             for pe in self.path:
                 pe.cache_entry.command = pe.command
     
-    def rec(self, depth):
+    def rec(self, depth, stack_depth):
         self.stats['node'] += 1
         self.check()
         
         self.check_stop()
         
-        if depth <= 0 or self.state.terminated:
+        if depth <= 0 or stack_depth <= 0 or self.state.terminated:
             return
         
         ub, cache_entry = self.get_ub_and_cache_entry(self.state)
@@ -130,7 +131,7 @@ class Solver(SolverBase):
         ordinary_commands = [''.join(cmd) for cmd in product('LRUDW', repeat=1)]
         # TODO: remove those that lead to duplicates
         
-        ordinary_commands += ia
+        ordinary_commands.extend(ia)
         
         for g in greedy_commands:
             if g in ordinary_commands:
@@ -145,7 +146,7 @@ class Solver(SolverBase):
             self.state = current_state.apply_commands(cmd)
             self.path.append(pe)
             
-            self.rec(depth-depth_delta)
+            self.rec(depth-depth_delta, stack_depth-1)
             
             self.path.pop()
         
@@ -155,6 +156,7 @@ class Solver(SolverBase):
         
         children = {}
         for cmd in ordinary_commands:
+            self.check_stop()
             t = current_state.apply_commands(cmd)
             if t.terminated:
                 ub = t.score
@@ -171,9 +173,12 @@ class Solver(SolverBase):
         
     
     def search(self):
+        stack_depth = min(200, 10**8//len(self.state.data))
+        logging.info('Max stack depth: {}'.format(stack_depth))
+        
         for depth in range(0, 100, 1):
             logging.info('depth: {}'.format(depth))
-            self.rec(depth)
+            self.rec(depth, stack_depth)
             
             for cache_entry in self.cache.itervalues():
                 cache_entry.time += 1e-3
@@ -231,9 +236,9 @@ def main():
     from test_emulators import validate_custom
 
     
-    map_name = 'contest10'
-    map_path = '../data/sample_maps/{}.map'.format(map_name)
-    #map_path = '../data/maps_manual/push2.map'
+    #map_name = 'contest10'
+    #map_path = '../data/sample_maps/{}.map'.format(map_name)
+    map_path = '../data/maps_manual/quick_flood.map'
     world = World.from_file(map_path)
     
     world.show()
