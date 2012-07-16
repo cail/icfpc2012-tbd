@@ -8,6 +8,7 @@ from time import clock, sleep
 from collections import defaultdict, Counter
 from itertools import product, islice
 
+from mask_errors import failsafe
 from solver_base import SolverBase
 from preprocessor import preprocess_world
 from upper_bound import upper_bound
@@ -172,6 +173,7 @@ class Solver(SolverBase):
         self.state = current_state
         
     
+    @failsafe(default=None)
     def search(self):
         stack_depth = min(200, 10**8//len(self.state.data))
         logging.info('Max stack depth: {}'.format(stack_depth))
@@ -196,6 +198,7 @@ class Solver(SolverBase):
     
 
 
+@failsafe(default=None)
 def aggressive_preprocess(world):
     '''
     inplace, because why not?
@@ -233,12 +236,12 @@ def main():
     from world import World
     from dual_world import DualWorld
     from dict_world import DictWorld
-    from test_emulators import validate_custom
+    from test_emulators import validate_custom, validate
 
     
-    #map_name = 'contest10'
-    #map_path = '../data/sample_maps/{}.map'.format(map_name)
-    map_path = '../data/maps_manual/quick_flood.map'
+    map_name = 'horock3'
+    map_path = '../data/sample_maps/{}.map'.format(map_name)
+    #map_path = '../data/maps_manual/horo2.map'
     world = World.from_file(map_path)
     
     world.show()
@@ -255,6 +258,7 @@ def main():
     print '****'
     print 'Solution:', score, repr(solution)
     
+    '''
     print 'validating...',
     
     world = DualWorld.from_file(map_path)
@@ -265,8 +269,10 @@ def main():
     validated_score = world.score
     
     assert score == validated_score, (score, validated_score)
+    '''
     
-    validate_custom(map_path, solution, [World, DictWorld, DualWorld])
+    validate(map_name, solution, [World])
+    #validate_custom(map_path, solution, [World])#, DictWorld, DualWorld])
     
     print 'ok'
     

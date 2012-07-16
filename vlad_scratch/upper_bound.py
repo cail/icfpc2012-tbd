@@ -1,9 +1,11 @@
 
+from mask_errors import failsafe
 from utils import dist
 from salesman import salesman_lower_bound
 
 
 
+@failsafe(default=10**10)
 def upper_bound(state):
     '''
     Upper bound on total score
@@ -13,8 +15,7 @@ def upper_bound(state):
     use upper_bound(state)-state.time
     '''
     
-    collectable_lambdas = state.collected_lambdas+sum(1 for _ in state.enumerate_lambdas())
-    # TODO: count rocks as well!
+    collectable_lambdas = state.collected_lambdas+state.data.count('\\')+state.data.count('@')
 
     # TODO: take trampolines into account in max_dist calculation
 
