@@ -41,6 +41,10 @@ tests = [
     
     ('trampoline1', 'RRLDDRRRUULDLLLURRRRRRDD'), # trampolines
     
+    ('horock1', 'RRDDU'),
+    ('horock1', 'LDDDDDLDURRDLURRRDDLRA'),
+    ('horock1', 'RRRDDDDLDDDDDRRRULLUUUULLLWDRULLLDRRRRDDRDUUUUULLURRRRUURRUULDDRUUUUDRURRDLLDDDUUUULLLUUUUURRRRU'),
+    
     # Pls add your own tests everyone, especially for interesting cases
     ]
 

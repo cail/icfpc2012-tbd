@@ -9,7 +9,7 @@ application_counter = 0
 TRAMPOLINE_SOURCE_LETTERS = set('ABCDEFGHI')
 TRAMPOLINE_TARGET_LETTERS = set('123456789')
 TRAMPOLINE_LETTERS = TRAMPOLINE_SOURCE_LETTERS | TRAMPOLINE_TARGET_LETTERS
-VALID_MAP_CHARACTERS = set('R#.*\\LO \n') | TRAMPOLINE_LETTERS  
+VALID_MAP_CHARACTERS = set('R#.*\\LO @\n') | TRAMPOLINE_LETTERS  
  
 def find_single_item(data, value):
     idx = data.index(value)
@@ -113,7 +113,7 @@ class World(WorldBase):
         world = World()
         world.width = width
         world.lift = find_single_item(data, 'L')
-        world.total_lambdas = data.count('\\')
+        world.total_lambdas = data.count('\\') + data.count('@')
         
         world.data = data
         world.robot = find_single_item(data, 'R')
@@ -208,8 +208,8 @@ class World(WorldBase):
                 new_data[robot] = ' '
                 new_world.final_score = new_world.get_score_win() 
                 return new_world 
-            elif new_cell == '*' and command in 'LR' and data[new_robot + direction] == ' ':
-                new_data[new_robot + direction] = '*'                
+            elif new_cell == '@' and command in 'LR' and data[new_robot + direction] == ' ':
+                new_data[new_robot + direction] = '@'                
                 new_data[new_robot] = 'R'
                 new_data[robot] = ' '
             elif new_cell == '*' and command in 'LR' and data[new_robot + direction] == ' ':
@@ -239,35 +239,37 @@ class World(WorldBase):
         else:
             new_world.time_underwater = 0
             
+        def rock_falls(data, new_world, new_data, new_robot, cell, offset, new_offset):
+            new_data[offset] = ' '
+            below_new_offset = new_offset + width
+            if cell == '@' and data[below_new_offset] != ' ': 
+                new_data[new_offset] = '\\'
+            else:
+                new_data[new_offset] = cell
+            if new_robot == below_new_offset:
+                new_world.final_score = new_world.get_score_lose() 
+        
+        # pypy optimizer is funny
+        ord_rock, ord_horock = ord('*'), ord('@') 
+        
         for i in reversed(xrange(1, len(data) / width - 1)):
             offset = i * width
             for offset in xrange(offset + 1, offset + width - 1):
                 cell = data[offset]
-                if cell == '*':
+                if ord(cell) == ord_rock or ord(cell) == ord_horock:
                     offset_below = offset + width 
                     cell_below = data[offset_below]
                     if cell_below == ' ':
-                        new_data[offset] = ' '
-                        new_data[offset_below] = '*'
-                        if offset_below + width == new_robot:
-                            new_world.final_score = new_world.get_score_lose()
-                    elif cell_below == '*' or cell_below == '^': # '^' is frozen stone (that is, 'slippery wall')
+                        rock_falls(data, new_world, new_data, new_robot, cell, offset, offset_below)
+                    elif cell_below == '*' or cell_below == '^' or cell_below == '@':
+                        # '^' is frozen stone (that is, 'slippery wall')
                         if data[offset + 1] == ' ' and data[offset_below + 1] == ' ':
-                            new_data[offset] = ' '
-                            new_data[offset_below + 1] = '*'
-                            if offset_below + width + 1 == new_robot:
-                                new_world.final_score = new_world.get_score_lose() 
+                            rock_falls(data, new_world, new_data, new_robot, cell, offset, offset_below + 1)
                         elif data[offset - 1] == ' ' and data[offset_below - 1] == ' ':
-                            new_data[offset] = ' '
-                            new_data[offset_below - 1] = '*'
-                            if offset_below + width - 1 == new_robot:
-                                new_world.final_score = new_world.get_score_lose() 
+                            rock_falls(data, new_world, new_data, new_robot, cell, offset, offset_below - 1)
                     elif cell_below == '\\':
                         if data[offset + 1] == ' ' and data[offset_below + 1] == ' ':
-                            new_data[offset] = ' '
-                            new_data[offset_below + 1] = '*'
-                            if offset_below + width + 1 == new_robot:
-                                new_world.final_score = new_world.get_score_lose()
+                            rock_falls(data, new_world, new_data, new_robot, cell, offset, offset_below + 1)
                                 
 
         return new_world
