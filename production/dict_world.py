@@ -29,7 +29,7 @@ class DictWorld(WorldBase):
         'water',
         'flooding',
         'waterproof',
-        'underwater', # time spend underwater
+        'time_underwater', # time spend time_underwater
     ]
     
     #### World interface, kind of
@@ -50,7 +50,7 @@ class DictWorld(WorldBase):
         self.flooding = 0
         self.waterproof = 10
         
-        self.underwater = 0
+        self.time_underwater = 0
         
 
     @staticmethod
@@ -131,9 +131,8 @@ class DictWorld(WorldBase):
     def water_level(self):
         if self.flooding == 0:
             return 0
-        return self.water+(self.time-1)//self.flooding-1
+        return self.water + (self.time - 1)//self.flooding
         # time-1 because we check it in update
-        # -1 because our coords are zero-based
         
     def apply_command(self, c):
         '''
@@ -203,13 +202,13 @@ class DictWorld(WorldBase):
         
     def update(self):
         _, y = self.robot_coords
-        if y <= self.water_level:
-            self.underwater += 1
-            if self.underwater > self.waterproof:
+        if y < self.water_level:
+            self.time_underwater += 1
+            if self.time_underwater > self.waterproof:
                 self.dead = True
-                return
+                # still run the rest of the update
         else:
-            self.underwater = 0
+            self.time_underwater = 0
         
         data = self.data
         u = {}

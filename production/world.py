@@ -34,7 +34,7 @@ class World(WorldBase):
         'collected_lambdas',
         'time',
         'final_score', # non-None when the world is terminated
-        'underwater',
+        'time_underwater',
     ]
     
 
@@ -54,7 +54,7 @@ class World(WorldBase):
             self.collected_lambdas = other.collected_lambdas
             self.time = other.time
             self.final_score = other.final_score
-            self.underwater = other.underwater
+            self.time_underwater = other.time_underwater
 
     @classmethod
     def from_string(World, src):
@@ -97,7 +97,7 @@ class World(WorldBase):
         world.water = int(metadict.get('Water', 0))
         world.flooding = int(metadict.get('Flooding', 0))
         world.waterproof = int(metadict.get('Waterproof', 10))
-        world.underwater = 0
+        world.time_underwater = 0
         
         return world
     
@@ -179,14 +179,6 @@ class World(WorldBase):
             new_world.data = new_data = new_data[:]
             new_world.robot = new_robot
             
-        if new_robot >= len(data) - width * (new_world.water_level + 1):
-            new_world.underwater += 1
-            if new_world.underwater > new_world.waterproof:
-                new_world.final_score = new_world.get_score_lose() 
-                return new_world
-        else:
-            new_world.underwater = 0
-        
         for i in xrange(len(data) / width - 2, 0, -1):
             offset = i * width
             for offset in xrange(offset + 1, offset + width - 1):
@@ -215,7 +207,15 @@ class World(WorldBase):
                             new_data[offset] = ' '
                             new_data[offset_below + 1] = '*'
                             if offset_below + width + 1 == new_robot:
-                                new_world.final_score = new_world.get_score_lose() 
+                                new_world.final_score = new_world.get_score_lose()
+                                
+        if new_robot >= len(data) - width * (new_world.water_level + 1):
+            new_world.time_underwater += 1
+            if new_world.time_underwater > new_world.waterproof:
+                new_world.final_score = new_world.get_score_lose() 
+        else:
+            new_world.time_underwater = 0
+
         return new_world
      
     # not __hash__ because semantics is slightly different
@@ -253,6 +253,9 @@ class World(WorldBase):
     
     def enumerate_lambdas_index(self):
         return [i for i,x in enumerate(self.data) if x == '\\']
+    
+    def enumerate_something_index(self, something):
+        return [i for i,x in enumerate(self.data) if x == something]
     
     def enumerate_lambdas(self):
         start = 0

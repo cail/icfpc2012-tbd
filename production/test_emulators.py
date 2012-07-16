@@ -23,10 +23,16 @@ tests = [
 
     ('flood1', 'WWWWWWWWLLLLWWWDDDWDWWWWU'), # jump out of water the same turn water rises on the last turn of waterproof
 
-    ('flood1', 'LLLLDWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWUWWW'), # goes really wrong if you forget to reset underwater timer when getting out 
+    ('flood1', 'LLLLDWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWUWWW'), # goes really wrong if you forget to reset time_underwater timer when getting out 
     
     ('contest8', 'RRRRRRRULD'), # map should be completely evaluated on death
-    ('contest8', 'RRRRRUD'), # and with down-up evaluation as well.     
+    ('contest8', 'RRRRRUD'), # and with down-up evaluation as well.
+    
+    ('flood1', 'LLLLDDDDWWWDWWWWU'), # can't escape from time_underwater     
+    ('flood1', 'LLLLDDDDWWWDWWWU'), # can escape from time_underwater
+    
+    ('flood1', 'LLLLLLDDDRUWWWWWWWWWWWWWWWWWWWWWWWWWWL'), # drowning happens after the update     
+    ('flood1', 'LLLLLLDDDRUWWWWWWWWWWWWWWWWWWWWWWWWWWD'), # update doesn't prevent drowning
     
     # Pls add your own tests everyone, especially for interesting cases
     ]
@@ -94,7 +100,7 @@ def validate_internal(map_data, commands, web_map_name, world_classes):
                 print format_world_state(prev_world)
                 print
             for result, emulators in result_dict.iteritems():
-                print '## ' + ', '.join(emulators)
+                print '*** ' + ', '.join(emulators)
                 print result
                 print
             print
@@ -123,7 +129,12 @@ def validate_internal(map_data, commands, web_map_name, world_classes):
             if terminated and not_terminated:
                 if all(w.terminated for w in worlds): break
                 print 'Simulations diverge after {!r}'.format(commands)
+                print 'Previous state:'
+                print format_world_state(prev_world)
+                print
+                print 'Current state:'
                 print format_world_state(worlds[0])
+                print
                 print 'Terminated:', ', '.join(terminated)
                 print 'Not terminated:', ', '.join(not_terminated)
                 return False
@@ -156,15 +167,23 @@ def run_interactively(world, initial_commands=''):
     def cleanup(commands):
         return [c for c in commands.upper() if c in 'UDLRWA']
     def print_world(world):
-        robot = world.robot 
-        coords = world.index_to_coords(robot)
-        
+        if hasattr(world, 'robot'):
+            robot = world.robot 
+            coords = world.index_to_coords(robot)
+        elif hasattr(world, 'robot_coords'):
+            robot = '-' 
+            coords = world.robot_coords
+        elif hasattr(world, 'robot_x'):
+            robot = '-' 
+            coords = (world.robot_x, world.robot_y) 
+            
         print world.get_map_string()
-        print 'Time: {:>2}, Robot: x={}, y={}, idx={}'.format(world.time, coords[0], coords[1], robot)
+        print 'Time: {:>2}, Robot: x={}, y={}, idx={}'.format(world.time, coords[0] + 1, coords[1] + 1, robot)
         if world.flooding:
-            print 'Water level: {}, underwater: {}/{}'.format(
-                    world.water_level(),
-                    world.underwater)
+            water_level = getattr(world, 'water_level', None)
+            if water_level is None: water_level = world.water - 1
+            print 'Water level: {}, time_underwater: {}/{}'.format(
+                    water_level, world.time_underwater, world.waterproof)
         print
         
     commands = cleanup(initial_commands)
