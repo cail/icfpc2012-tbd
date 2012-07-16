@@ -1,6 +1,7 @@
 import logging
 from world import World
 from heapq import heappush, heappop
+from vorber_world import VorberWorld
 
 class LambdaFields:
     # fields: [(int LambdaCoordinate, [int] LambdaField)]
@@ -31,13 +32,10 @@ class LambdaFields:
         # very mutable front, emulated with heapq
         front = []
         heappush(front, (0, source))
-        # very functional way of getting incident vertices 
-        incidental_cells = lambda x: [ix for ix in [x+1, x-1, x+world.width, x-world.width]]
-        
         #logic for wave distribution
         while front:
             t, x = heappop(front)
-            for ix in incidental_cells(x):
+            for ix in self.incident_cells(x, world):
                 # boundaries
                 if not (0 <= ix < len(world.data)):
                     continue 
@@ -47,7 +45,7 @@ class LambdaFields:
                 # another brick in the wall
                 if world.data[ix] == '#':
                     continue
-                passing_time = self.cell_wave_passing_time(world.data[ix], t)
+                passing_time = self.wave_passing_time(world.data[ix], t)
                 field_potential = (passing_time, ix)
                 # been there. did better.
                 if passing_time < field[ix]:
@@ -55,16 +53,54 @@ class LambdaFields:
                     heappush(front, field_potential)
         return field
     
-    def cell_wave_passing_time(self, cell, time):
+    # cells that are to be considered incident to the given cell 
+    def incident_cells(self, x, world):
+        return [ix for ix in [x+1, x-1, x+world.width, x-world.width]]
+    
+    # speed of lambda waves in the medium
+    def wave_passing_time(self, cell, time):
         if cell == '*':
             time+=2
         else:
             time+=1
         return time
     
+    def full_superposition(self):
+        full_sup = [0] * len(self.world.data)
+        for i in range(0, len(self.world.data)):
+            for ffs in self.fields:
+                full_sup[i] += ffs[1][i]
+        return full_sup
+    
+    def superposition(self, index):
+        result = 0
+        for ffs in self.fields:
+            result += ffs[1][index]
+        return result
+    
 if __name__ == '__main__':
+    import pprint
     logging.basicConfig(level=logging.DEBUG)
     #world = World.from_file('../data/maps_manual/the_best.map')
-    world = World.from_file('../data/maps_manual/lambda_wave1.map')
+    #world = World.from_file('../data/maps_manual/lambda_wave1.map')
+    world = World.from_file('../data/maps_manual/tricky.map')
+    vorber_world = VorberWorld.from_file('../data/maps_manual/tricky.map')
     lambda_fields = LambdaFields(world)
+    index = 0
+    for i in range(0, len(world.data) / world.width):
+        print
+        for ii in range(0, world.width):
+            field_potential = 0
+            for ffs in lambda_fields.fields:
+                source, potentials = ffs
+                field_potential += potentials[index]
+            print field_potential,
+            index+=1               
+    print
+    trp = vorber_world.trampolines
+    pprint.pprint(trp['A'])
+    pprint.pprint(lambda_fields.superposition(34))
+    print(lambda_fields.world.width)
+    #pprint.pprint(lambda_fields.full_superposition(lambda_fields))
+    #pprint.pprint(lambda_fields.fields)
     world.show()

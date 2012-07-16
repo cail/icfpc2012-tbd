@@ -77,6 +77,8 @@ class GeneticSolver(object):
         
         self.cache = {}
         self.mutations_generator = WeightedRandomGenerator(*zip(*MUTATIONS))
+        
+        #self.commands_applied = 0
 
     def random_destination(self, near=None):
         while True:
@@ -131,6 +133,7 @@ class GeneticSolver(object):
             gene_type, gene_value = gene
             if gene_type == 'wait':
                 world = world.apply_command('W')
+                #self.commands_applied += 1
                 if world.terminated:
                     break
                 world_hash = world.get_hash()
@@ -141,9 +144,11 @@ class GeneticSolver(object):
                 if cached:
                     commands, world_hash = self.cache[cache_key]
                     world = world.apply_commands(commands)
+                    #self.commands_applied += 1
                 else:
                     commands = pathfinder.commands_to_reach(world, destination)
                     world = world.apply_commands(commands)
+                    #self.commands_applied += 1
                     world_hash = world.get_hash()
                     self.cache[cache_key] = (commands, world_hash)
                 if world.terminated:
@@ -165,13 +170,18 @@ class GeneticSolver(object):
             elif gene_type == 'move':
                 destination = gene_value
                 commands = pathfinder.commands_to_reach(world, destination)
-                compiled.extend(commands)
-                world = world.apply_commands(commands)
-                if world.terminated:
-                    break
+                for c in commands:
+                    world = world.apply_command(c)
+                    compiled.append(c)
+                    if world.terminated:
+                        break
             else:
                 assert False, "Unrecognized gene: %s" % gene_type
-        compiled.append('A')
+            if world.terminated:
+                break
+
+        if not world.terminated:
+            compiled.append('A')
         return ''.join(compiled)
     
     def evaluate_and_sort(self, population):
@@ -183,17 +193,17 @@ class GeneticSolver(object):
     
     def step(self, population):
         scores, candidates = self.evaluate_and_sort(population)
-#        print 'Fitness: max %d, average %d' % (scores[0], sum(scores)/float(len(scores)))
-        
         num_best = int(POPULATION_SIZE * SELECTED_FOR_BREEDING)
+#        for candidate in population:
+#            print self.compile(candidate)
         best = candidates[:num_best]
-        best_scores = scores[:num_best]
-        min_score = min(best_scores)
-        if min_score < 0:
-            weights = [score - min_score for score in best_scores]
-        else:
-            weights = best_scores
-        random_candidate = WeightedRandomGenerator(candidates, weights)
+#        best_scores = scores[:num_best]
+#        min_score = min(best_scores)
+#        if min_score < 0:
+#            weights = [score - min_score for score in best_scores]
+#        else:
+#            weights = best_scores
+#        random_candidate = WeightedRandomGenerator(candidates, weights)
         elite = [candidate.copy() for candidate in candidates[:NUM_ELITE]]
         leader = candidates[0].copy()
         
@@ -219,33 +229,44 @@ class GeneticSolver(object):
         next_generation.extend(elite)
         return (next_generation, leader)
     
-    def solve(self, timeout, local_timeout=15):
+    def solve(self, running_time=150, convergence_time=0, verbose=False):
+        ''' Make multiple attemts at solving the map, returning the best solution.
+        
+            The function will run for running_time seconds. Population is discarded
+            if no improvement has been observed for convergence_time seconds. '''
         start_time = time.time()
         timed_out = False
         best_leader, best_leader_score = None, None
         while not timed_out:
-            population = [self.generate_candidate(3) for _ in xrange(POPULATION_SIZE)]
+            population = [self.generate_candidate(INITIAL_LENGTH) \
+                          for _ in xrange(POPULATION_SIZE)]
             last_improvement_time = start_time
             previous_iteration_score = None
             for i in itertools.count():
+                #self.commands_applied = 0
                 (population, leader) = self.step(population)
+                #print "Applied %d commands" % self.commands_applied
                 leader_score = self.fitness(leader)
-                if (previous_iteration_score is None) or (leader_score > previous_iteration_score):
+                if (previous_iteration_score is None) or \
+                    (leader_score > previous_iteration_score):
                     last_improvement_time = time.time()
                 previous_iteration_score = leader_score 
-                print "Iteration %d: %d" % (i, leader_score)
-                if time.time() - start_time > timeout:
+                if verbose:
+                    print "Iteration %d: %d" % (i, leader_score)
+                if running_time > 0 and (time.time() - start_time > running_time):
                     timed_out = True
                     break
-                if time.time() - last_improvement_time > local_timeout:
+                if convergence_time > 0 and \
+                    (time.time() - last_improvement_time > convergence_time):
                     break
             if (best_leader is None) or (leader_score > best_leader_score):
-                print "New global best: %d" % leader_score
+                if verbose:
+                    print "New global best: %d" % leader_score
                 best_leader = leader
                 best_leader_score = leader_score
         return self.compile(best_leader)
 
-
+INITIAL_LENGTH = 3
 POPULATION_SIZE = 300
 SELECTED_FOR_BREEDING = 0.1
 CROSSOVER_RATE = 0.7
@@ -256,15 +277,17 @@ NUM_ELITE = 3 # top N candidates are copied to the new generation unchanged
 MUTATIONS = [('insert_long_move', 10), ('insert_short_move', 10),\
               ('insert_wait', 5), ('remove', 20),] # weighted mutations
 SHORT_MOVE_DISTANCE = 3
-#SHORT_MOVE_CHANCE = 0.3
 
 if __name__ == '__main__':
-    timeout = 20
+    running_time = 20
     assert(len(sys.argv) >= 2)
     map_path = sys.argv[1]
+    arguments = {}
     if len(sys.argv) > 2:
-        timeout = int(sys.argv[2])
-    print map_path
+        arguments['running_time'] = int(sys.argv[2])
+    if len(sys.argv) > 3:
+        arguments['convergence_time'] = int(sys.argv[3])
+        
     world = World.from_file(map_path)
     solver = GeneticSolver(world)
-    print solver.solve(timeout)
+    print solver.solve(verbose=True, **arguments)
