@@ -1,6 +1,3 @@
-import sys
-sys.path.append('../production') # for pypy
-
 
 import logging
 

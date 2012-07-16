@@ -1,6 +1,4 @@
 import sys
-sys.path.append('../production') # for pypy
-
 import signal
 
 from world import World
