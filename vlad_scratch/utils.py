@@ -89,8 +89,21 @@ def interesting_actions(world):
         actions.append((9, idx, path))
         
     
+    neighbours8 = [d1 + d2 
+                     for d1 in (-1, 0, 1) 
+                     for d2 in (-width, 0, width)
+                     if d1 + d2 != 0]
+
+    
     eatable = ' .!\\'
     
+    for i in range(world.width, len(data)):
+        if data[i] in eatable:
+            if world.razors > 0 and any(data[i+d] == 'W' for d in neighbours8):
+                data[i] = 'c'
+                
+    #world.show()
+            
     for i in range(world.width, len(data)):
         if data[i-width] in '*@' and data[i] in eatable:
             data[i] = '_'
@@ -101,16 +114,28 @@ def interesting_actions(world):
                 data[i-1] = '>'
             if left:
                 data[i+1] = '<'
+
+            
         
     #world.show()
         
     walkable = ' .!\\<>_'
     
-    interesting = '_<>\\ABCDEFGHI'
+    interesting = '_<>\\ABCDEFGHIc'
+    if world.razors == 0:
+        interesting += '!'
+    
     for idx, path in enumerate_paths_to_goals(world, world.robot, walkable, interesting):
         priority = 0
-        if data[idx] in 'ABCDEFGHI':
+        if data[idx] == 'c':
+            for d in neighbours8:
+                if data[idx+d] == 'W':
+                    priority += 0.1
+            path += 'S'
+        if data[idx] == '!':
             priority = 1
+        if data[idx] in 'ABCDEFGHI':
+            priority = 2
         if data[idx] == '>':
             if data[idx+1] == '@':
                 priority = 4
@@ -157,7 +182,7 @@ if __name__ == '__main__':
     
     #world = World.from_file('../data/sample_maps/trampoline3.map')
     
-    world = World.from_file('../data/maps_manual/horo2.map')
+    world = World.from_file('../data/maps_manual/simple_beard.map')
     
     world.show()
     
