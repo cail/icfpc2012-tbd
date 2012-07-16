@@ -64,13 +64,13 @@ from dict_world import DictWorld
 from dual_world import DualWorld
 from vorber_world import VorberWorld
 
-class PreprocessedWorld(World):
-    @classmethod
-    def from_string(my_class, src):
-        # lol classmethods are broken
-        world = World.from_string.im_func(my_class, src)
-        world = preprocess_world(world)
-        return world
+#class PreprocessedWorld(World):
+#    @classmethod
+#    def from_string(my_class, src):
+#        # lol classmethods are broken
+#        world = World.from_string.im_func(my_class, src)
+#        world = preprocess_world(world)
+#        return world
         
 
 world_classes = [World, VorberWorld] #  DictWorld, DualWorld # PreprocessedWorld 
