@@ -14,6 +14,7 @@ develop-eggs
 .installed.cfg
 
 pypy-1.9-linux.tar.bz2
+icfp-*.tgz
 
 # Installer logs
 pip-log.txt
