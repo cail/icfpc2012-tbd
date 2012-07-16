@@ -12,20 +12,15 @@ class LambdaFields:
         # LambdaField is the list of effects that the field has on each of the cells
         # remember that world[0,0] is the bottom left row :D
     __slots__ = [ 'fields'
-                 ,'reverse_trampolines'
                  ,'world' 
-                 ,'vorber_world'
     ]
  
     @property
     def brightness(self):
         return 25+len(self.world.data)
  
-    def __init__(self, world, vorber_world=False):
+    def __init__(self, world):
         self.world = world
-        if vorber_world != False:
-            self.vorber_world = vorber_world
-        self.reverse_trampolines = self.get_reverse_trampolines()
         fields = []
         for field_source in world.enumerate_lambdas_index():
             fields.append((field_source, self.calculate_field(field_source)))
@@ -42,8 +37,8 @@ class LambdaFields:
         #logic for wave distribution
         while front:
             t, x = heappop(front)
-            #pprint.pprint(('x->ix:', (x, '->', world.data[x])))
-            #pprint.pprint(self.incident_cells(x, world))
+            pprint.pprint(('x->ix:', (x, '->', world.data[x])))
+            pprint.pprint(self.incident_cells(x, world))
             for ix in self.incident_cells(x, world):
                 # boundaries
                 if not (0 <= ix < len(world.data)):
@@ -55,6 +50,7 @@ class LambdaFields:
                 if self.world.data[ix] in '#':
                     continue
                 passing_time = self.wave_passing_time(world.data[ix], t)
+                pprint.pprint(passing_time)
                 if passing_time != 0:
                     field_potential = (passing_time, ix)
                     # been there. did better.
@@ -67,9 +63,9 @@ class LambdaFields:
     
     # cells that are to be considered incident to the given cell 
     def incident_cells(self, x, world):
-        if self.world.data[x] in '123456789':
-            literas = self.reverse_trampolines[self.world.data[x]]
-            return [ix for ix in [world.enumerate_something_index(litera) for litera in literas]]
+        for _, (to, ix) in self.world.trampolines.iteritems():
+            if x == to:
+                return ix
         else:
             return [ix for ix in [x+1, x-1, x+world.width, x-world.width]]
     
@@ -98,22 +94,14 @@ class LambdaFields:
             result += ffs[1][index]
         return result
     
-    # uses vorber_world this far, as trampolines aren't implemented in main yet 
-    def get_reverse_trampolines(self):
-        trp = self.vorber_world.trampolines
-        prt = defaultdict(list)
-        for k, v in trp.iteritems():
-            prt[v].append(k)
-        return prt
-        
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     #world = World.from_file('../data/maps_manual/the_best.map')
-    #world = World.from_file('../data/maps_manual/lambda_wave1.map')
-    world = World.from_file('../data/maps_manual/tricky.map')
+    world = World.from_file('../data/maps_manual/lambda_wave1.map')
+    #world = World.from_file('../data/maps_manual/tricky.map')
     #vorber_world = VorberWorld.from_file('../data/maps_manual/lambda_wave1.map')
-    vorber_world = VorberWorld.from_file('../data/maps_manual/tricky.map')
-    lambda_fields = LambdaFields(world, vorber_world)
+    #vorber_world = VorberWorld.from_file('../data/maps_manual/tricky.map')
+    lambda_fields = LambdaFields(world)
     index = 0
     for i in range(0, len(world.data) / world.width):
         print
