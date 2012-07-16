@@ -13,7 +13,9 @@ def upper_bound(state):
     use upper_bound(state)-state.time
     '''
     
-    collectable_lambdas = state.collected_lambdas+sum(1 for _ in state.enumerate_lambdas())
+    #collectable_lambdas_ = state.collected_lambdas+sum(1 for _ in state.enumerate_lambdas())
+    collectable_lambdas = state.collected_lambdas+state.data.count('\\')+state.data.count('@')
+    #assert collectable_lambdas == collectable_lambdas_
     # TODO: count rocks as well!
 
     # TODO: take trampolines into account in max_dist calculation

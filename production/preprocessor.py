@@ -15,16 +15,16 @@ def reachability_step(width, data):
         cell = data[i]
         if cell == ' ':
             auto_empty[i] = True
-        elif cell == '*':
+        elif cell in '*@':
             if auto_empty[i+width]:
                 # fall down
                 auto_empty[i] = True
-            elif data[i+width] in '^*' and\
-                 auto_empty[i+width-1] and data[i-1] in ' *':
+            elif data[i+width] in '^*@' and\
+                 auto_empty[i+width-1] and data[i-1] in ' *@':
                 # fall left
                 auto_empty[i] = True
-            elif data[i+width] in '^*\\' and\
-                 auto_empty[i+width+1] and data[i+1] in ' *':
+            elif data[i+width] in '^*@\\' and\
+                 auto_empty[i+width+1] and data[i+1] in ' *@':
                 # fall right
                 auto_empty[i] = True
                 
@@ -53,7 +53,7 @@ def reachability_step(width, data):
                 if data[j] in portals:
                     if not reachable[j]:
                         tasks.add(j)
-        elif cell == '*':
+        elif cell in '*@':
             if reachable[i+width]:
                 # dig under
                 r = True
@@ -63,12 +63,12 @@ def reachability_step(width, data):
             elif reachable[i+1] and (reachable[i-1] or auto_empty[i-1]):
                 # push left
                 r = True
-            elif data[i+width] in '*^\\' and\
+            elif data[i+width] in '*@^\\' and\
                  (reachable[i+1] or auto_empty[i+1]) and\
                  (reachable[i+width+1] or auto_empty[i+width+1]):
                 # fall right
                 r = True
-            elif data[i+width] in '*^' and\
+            elif data[i+width] in '*@^' and\
                  (reachable[i-1] or auto_empty[i-1]) and\
                  (reachable[i+width-1] or auto_empty[i+width-1]):
                 # fall left
@@ -97,7 +97,7 @@ def stone_reachability_step_(width, data):
     for i in range(width, len(data)-width, width):
         for j in range(i, i+width):
             #if data[j] == '*':
-            if data[j] == '*' or result[j-width]: # this is ridiculously imprecise, but otherwise it's incorrect
+            if data[j] in '*@' or result[j-width]: # this is ridiculously imprecise, but otherwise it's incorrect
                 make_reachable(j-1)
                 make_reachable(j)
                 make_reachable(j+1)
@@ -129,7 +129,7 @@ def stone_reachability_step(width, data):
     for i in range(width, len(data)-width, width):
         for j in range(i, i+width):
             cell = data[j]
-            if cell == '*':
+            if cell in '*@':
                 r[j] = True
                 if data[j-1] == 'R' and data[j+1] == ' ':
                     r[j+1] = True
@@ -176,7 +176,7 @@ def preprocess_world(world):
     for i in range(width, len(data)):
         if not reachable[i]:
             cell = data[i]
-            if cell == '*':
+            if cell in '*@':
                 data[i] = '^'
             elif cell not in 'LO':
                 data[i] = '#'
