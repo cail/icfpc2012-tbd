@@ -41,7 +41,9 @@ class Candidate(object):
     def __len__(self):
         return len(self.genes)
         
-        
+class TimeOut(Exception):
+    pass
+
 def crossover(candidate1, candidate2):
     while True: # quick fix to avoid empty offspring
         index1 = random.randrange(len(candidate1))
@@ -72,13 +74,13 @@ class WeightedRandomGenerator(object):
 class GeneticSolver(object):
     def __init__(self, world):
         self.world = world
-        landmark_symbols = ['\\', 'L'] + map(chr, range(ord('A'), ord('A')+9))
+        landmark_symbols = ['\\', 'L', '!'] + map(chr, range(ord('A'), ord('A')+9))
         self.landmarks = [i for i, c in enumerate(world.data) if c in landmark_symbols]
         
         self.cache = {}
         self.mutations_generator = WeightedRandomGenerator(*zip(*MUTATIONS))
         
-        #self.commands_applied = 0
+        self.best, self.best_score = None, None
 
     def random_destination(self, near=None):
         while True:
@@ -130,10 +132,11 @@ class GeneticSolver(object):
         world = World(self.world)
         world_hash = world.get_hash()
         for gene in candidate.genes:
+            if time.time() > self.deadline:
+                raise TimeOut
             gene_type, gene_value = gene
             if gene_type == 'wait':
                 world = world.apply_command('W')
-                #self.commands_applied += 1
                 if world.terminated:
                     break
                 world_hash = world.get_hash()
@@ -143,16 +146,23 @@ class GeneticSolver(object):
                 cached = (cache_key in self.cache)
                 if cached:
                     commands, world_hash = self.cache[cache_key]
-                    world = world.apply_commands(commands)
-                    #self.commands_applied += 1
                 else:
                     commands = pathfinder.commands_to_reach(world, destination)
-                    world = world.apply_commands(commands)
-                    #self.commands_applied += 1
+
+                #world = world.apply_commands(commands)
+
+                for c in commands:
+                    direction = [-world.width, world.width, -1, 1]['UDLR'.index(c)]
+                    if world.data[world.robot + direction] == 'W' and world.razors > 0:
+                        world = world.apply_command('S')
+                        if world.terminated: break
+                    world = world.apply_command(c)
+                    if world.terminated: break
+
+                if not cached:
                     world_hash = world.get_hash()
                     self.cache[cache_key] = (commands, world_hash)
-                if world.terminated:
-                    break
+                if world.terminated: break
             else:
                 assert False, "Unrecognized gene: %s" % gene_type
         return world.score
@@ -165,16 +175,19 @@ class GeneticSolver(object):
             if gene_type == 'wait':
                 world = world.apply_command('W')
                 compiled.append('W')
-                if world.terminated:
-                    break
+                if world.terminated: break
             elif gene_type == 'move':
                 destination = gene_value
                 commands = pathfinder.commands_to_reach(world, destination)
                 for c in commands:
+                    direction = [-world.width, world.width, -1, 1]['UDLR'.index(c)]
+                    if world.data[world.robot + direction] == 'W' and world.razors > 0:
+                        world = world.apply_command('S')
+                        compiled.append('S')
+                        if world.terminated: break
                     world = world.apply_command(c)
                     compiled.append(c)
-                    if world.terminated:
-                        break
+                    if world.terminated: break
             else:
                 assert False, "Unrecognized gene: %s" % gene_type
             if world.terminated:
@@ -194,28 +207,16 @@ class GeneticSolver(object):
     def step(self, population):
         scores, candidates = self.evaluate_and_sort(population)
         num_best = int(POPULATION_SIZE * SELECTED_FOR_BREEDING)
-#        for candidate in population:
-#            print self.compile(candidate)
         best = candidates[:num_best]
-#        best_scores = scores[:num_best]
-#        min_score = min(best_scores)
-#        if min_score < 0:
-#            weights = [score - min_score for score in best_scores]
-#        else:
-#            weights = best_scores
-#        random_candidate = WeightedRandomGenerator(candidates, weights)
         elite = [candidate.copy() for candidate in candidates[:NUM_ELITE]]
         leader = candidates[0].copy()
         
         next_generation = []
         while len(next_generation) < POPULATION_SIZE:
-            #parent1 = random_candidate.next()
-            #parent2 = random_candidate.next()
             parent1 = random.choice(best)
             parent2 = random.choice(best)
             while parent2 != parent1:
                 parent2 = random.choice(best)
-#                parent2 = random_candidate.next()
             
             if random.random() < CROSSOVER_RATE:
                 child = crossover(parent1, parent2)
@@ -229,54 +230,68 @@ class GeneticSolver(object):
         next_generation.extend(elite)
         return (next_generation, leader)
     
-    def solve(self, running_time=150, convergence_time=0, verbose=False):
-        ''' Make multiple attemts at solving the map, returning the best solution.
+    def solve(self, running_time=150, convergence_time=10, verbose=False):
+        ''' Make multiple attempts at solving the map, returning the best solution.
         
             The function will run for running_time seconds. Population is discarded
             if no improvement has been observed for convergence_time seconds. '''
         start_time = time.time()
         timed_out = False
-        best_leader, best_leader_score = None, None
-        while not timed_out:
-            population = [self.generate_candidate(INITIAL_LENGTH) \
-                          for _ in xrange(POPULATION_SIZE)]
-            last_improvement_time = start_time
-            previous_iteration_score = None
-            for i in itertools.count():
-                #self.commands_applied = 0
-                (population, leader) = self.step(population)
-                #print "Applied %d commands" % self.commands_applied
-                leader_score = self.fitness(leader)
-                if (previous_iteration_score is None) or \
-                    (leader_score > previous_iteration_score):
-                    last_improvement_time = time.time()
-                previous_iteration_score = leader_score 
-                if verbose:
-                    print "Iteration %d: %d" % (i, leader_score)
-                if running_time > 0 and (time.time() - start_time > running_time):
-                    timed_out = True
-                    break
-                if convergence_time > 0 and \
-                    (time.time() - last_improvement_time > convergence_time):
-                    break
-            if (best_leader is None) or (leader_score > best_leader_score):
-                if verbose:
-                    print "New global best: %d" % leader_score
-                best_leader = leader
-                best_leader_score = leader_score
-        return self.compile(best_leader)
+        
+        self.best, self.best_score = 'A', None
+        
+        self.deadline = start_time + running_time
+                
+        try:
+            while True:
+                population = [self.generate_candidate(INITIAL_LENGTH) \
+                              for _ in xrange(POPULATION_SIZE)]
+                last_improvement_time = start_time
+                previous_iteration_score = None
+                for i in itertools.count():
+                    (population, leader) = self.step(population)
+                    leader_score = self.fitness(leader)
+                    if (previous_iteration_score is None) or \
+                        (leader_score > previous_iteration_score):
+                        last_improvement_time = time.time()
+                    previous_iteration_score = leader_score 
+                    if verbose:
+                        print "Iteration %d: %d" % (i, leader_score)
+                    if convergence_time > 0 and \
+                        (time.time() - last_improvement_time > convergence_time):
+                        break
+                    if (self.best_score is None) or (leader_score > self.best_score):
+                        if verbose:
+                            print "New global best: %d" % leader_score
+                        self.best = self.compile(leader)
+                        self.best_score = leader_score
+        except TimeOut:
+            pass
+        return self.best
+
+    def get_best(self):
+        if self.best_score == None:
+            return (0, 'A')
+        else:
+            #return (self.best_score, self.compile(self.best))
+            return (self.best_score, self.best)
 
 INITIAL_LENGTH = 3
 POPULATION_SIZE = 300
 SELECTED_FOR_BREEDING = 0.1
 CROSSOVER_RATE = 0.7
 MUTATION_RATE = 0.7
-MUTATION_ATTEMPTS = 15 # stir things up a bit
+MUTATION_ATTEMPTS = 10 # stir things up a bit
 LANDMARK_GENE_CHANCE = 0.3 # generates genes that makes us go to interesting places
 NUM_ELITE = 3 # top N candidates are copied to the new generation unchanged 
 MUTATIONS = [('insert_long_move', 10), ('insert_short_move', 10),\
               ('insert_wait', 5), ('remove', 20),] # weighted mutations
 SHORT_MOVE_DISTANCE = 3
+
+def solve(world, running_time):
+    solver = GeneticSolver(world)
+    return solver.solve(running_time=running_time)
+    
 
 if __name__ == '__main__':
     running_time = 20
