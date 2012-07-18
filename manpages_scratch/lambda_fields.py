@@ -1,6 +1,7 @@
 import logging
 from world import World
 from heapq import heappush, heappop
+from test_emulators import run_interactively
 
 class LambdaFields(object):
     # fields: [(int LambdaCoordinate, [int] LambdaField)]
@@ -92,26 +93,27 @@ class LambdaFields(object):
         10 * len(self.world.data)
     
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
+    #logging.basicConfig(level=logging.DEBUG)
     #world = World.from_file('../data/maps_manual/the_best.map')
-    #world = World.from_file('../data/maps_manual/lambda_wave1.map')
-    world = World.from_file('../data/maps_random/mp_random1.map')
+    #world = World.from_file('../data/maps_random/pizdets.map')
+    #world = World.from_file('../data/maps_random/yushi.map')
     #vorber_world = VorberWorld.from_file('../data/maps_manual/lambda_wave1.map')
     #vorber_world = VorberWorld.from_file('../data/maps_manual/tricky.map')
-    lambda_fields = LambdaFields(world)
-    index = 0
-    for i in range(0, len(world.data) / world.width):
-        print
-        for ii in range(0, world.width):
-            field_potential = 0
-            for ffs in lambda_fields.fields:
-                source, potentials = ffs
-                field_potential += potentials[index]
-            print field_potential,
-            index+=1               
-    print
+    #lambda_fields = LambdaFields(world)
+    #index = 0
+    #for i in range(0, len(world.data) / world.width):
+    #    print
+    #    for ii in range(0, world.width):
+    #        field_potential = 0
+    #        for ffs in lambda_fields.fields:
+    #            source, potentials = ffs
+    #            field_potential += potentials[index]
+    #       print field_potential,
+    #        index+=1               
+    #print
     #for k, v in trp.itervalues():
     #    print k, v
     #pprint.pprint(lambda_fields.superposition(lambda_fields))
     #pprint.pprint(lambda_fields.fields)
-    world.show()
+    #world.show()
+    run_interactively(World.from_file('../data/maps_random/yushi.map'), '')
