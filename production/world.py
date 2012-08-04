@@ -213,6 +213,7 @@ class World(WorldBase):
             new_robot = robot
         elif command == 'S':
             if self.razors > 0:
+                new_world.razors -= 1
                 for d in self.neighbours8:
                     if new_data[robot + d] == 'W':
                         new_data[robot + d] = ' '
